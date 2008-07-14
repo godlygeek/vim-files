@@ -1,0 +1,219 @@
+*MarkLines.txt*         Visually mark important lines   Sep 22, 2007
+
+                                                           *marklines-author*
+Author:  Matthew J. Wozniski (mjw@drexel.edu)
+                                                          *marklines-license*
+Copyright (c) 2007, Matthew J. Wozniski
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * The names of the contributors may not be used to endorse or promote
+      products derived from this software without specific prior written
+      permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER ``AS IS'' AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+=============================================================================
+1. Contents                                  *marklines* *marklines-contents*
+
+  1. Contents                       |marklines-contents|
+  2. Introduction                   |marklines-intro|
+  3. Usage                          |marklines-usage|
+    3.1. Common usage               |marklines-common|
+    3.2. MarkLinesOn usage          |:MarkLinesOn|
+    3.3. MarkLinesOff usage         |:MarkLinesOff|
+    3.4. MarkLinesToggle usage      |:MarkLinesToggle|
+    3.5. Usage examples             |marklines-examples|
+  4. Mapped keys                    |marklines-maps|
+  5. Customization                  |marklines-customization|
+    5.1. Variables                  |marklines-variables|
+    5.2. Default Highlight Group    |marklines-default-higrp|
+  6. To do                          |marklines-todo|
+  7. History                        |marklines-history|
+
+=============================================================================
+2. Introduction                                             *marklines-intro*
+
+The MarkLines plugin allows one to visually mark any number of lines, in any
+number of buffers, with any chosen highlight.  In a sufficiently new version
+of VIM, 7.1.040 or greater, you can use more than one highlight color per
+window simultaneously.
+
+=============================================================================
+3. Usage                                                    *marklines-usage*
+
+Let's keep this simple and sweet.  This plugin provides three new commands,
+|:MarkLinesOn|, |:MarkLinesOff| and |:MarkLinesToggle|.
+
+3.1. Common usage                                          *marklines-common*
+
+All three new commands operate upon a range (see |10.3| or |cmdline-ranges|).
+If a range is not provided, all three default to the current line.  An invalid
+range simply stops any lines from being marked or unmarked.  All three also
+take an optional argument representing a highlight group.  If it is not given
+and the global variable |g:marklines_highlight| is defined, it defaults to the
+value of that variable, otherwise it defaults to the highlight group
+|MarkedLine|.  When marking a range, the chosen highlight group is used.  For
+:MarkLinesOff, a line is only unmarked if it matches the provided highlight
+group.  :MarkLinesOff with no arguments unmarks all lines.
+
+3.2. :MarkLinesOn                                              *:MarkLinesOn*
+
+:MarkLinesOn will take every line in the range provided to it and mark it with
+the provided highlight group, chosen as explained in |marklines-common|.  If
+your version of VIM only supports one active match per plugin per window and
+another highlight group was already being used, all lines already marked with
+the other highlight group will now be marked with the new highlight group.
+This color squeezing will occur even if the given range was invalid.
+
+3.3. :MarkLinesOff                                            *:MarkLinesOff*
+
+:MarkLinesOff will take every line in the range provided to it and unmark it
+if it matches the highlight group passed as an argument to :MarkLinesOff.  If
+:MarkLinesOff was not passed an argument, it unmarks all lines in the range
+regardless of what highlight group each was previously in.  If a line was not
+in a highlight group, it remains unchanged.
+
+3.4. :MarkLinesToggle                                      *:MarkLinesToggle*
+
+:MarkLinesToggle is the hybrid between :MarkLinesOn and :MarkLinesOff.  If
+every line in the range provided to it is already in the chosen highlight
+group, determined as per |marklines-common|, it is equivalent to calling
+:MarkLinesOff for the given range.  Otherwise, it is equivalent to calling
+:MarkLinesOn for the given range with the given highlight group.
+
+3.5. Examples                                            *marklines-examples*
+
+The following are examples of useful ways to call these functions.
+
+  " Mark the current line with the default highlight background
+:MarkLinesOn
+
+  " Mark the current line with red foreground text
+:MarkLinesOn Error
+
+  " Mark all lines but the first with the custom highlight group MyGroup
+:2,$MarkLinesOn MyGroup
+
+  " If the current line is already marked with an Error highlight, unmark it.
+  " Otherwise, mark the current line with an Error highlight.
+:MarkLinesToggle Error
+
+  " Unmark all marked lines
+:%MarkLinesOff
+
+  " Unmark all lines currently marked with an error highlight.
+:%MarkLinesOff Error
+
+  " Mark the entirety of every line containing the word 'kibab' after
+  " unmarking all other lines
+:MarkLinesClear | g/kibab/:MarkLines
+
+  " And, what help page would be complete without a quick-and-dirty hack?  If
+  " your VIM version supports it, you can have multiple different highlight
+  " groups for matched lines within a single window at the same time.  If you
+  " want to combine all of those into one highlight group, you can force it
+  " like this:
+:let g:marklines_mode=2 | :0MarkLinesOn Error | let g:marklines_mode=3
+
+The above works by temporarily tricking MarkLines into thinking that it only
+supports one match at a time, convincing it to squeeze highlight groups but
+not add any new lines by calling MarkLinesOn with an invalid range.  Then, it
+restores the old operating mode.
+
+=============================================================================
+
+4. Mapped keys                                               *marklines-maps*
+
+If |g:marklines_noautomap| is not set when MarkLines is loaded, MarkLines will
+create a few default maps to make using MarkLines easier.  These maps are
+bound to |mapleader| followed by two keystrokes.  If the 'mapleader' variable
+is unset, they begin with a backslash, "\".  They are mapped for both normal
+and visual mode, so it's easy to operate upon a selection.
+
+<leader>mc   Clear:  Call MarkLinesOff for the current line or selection.
+<leader>ms   Select: Call MarkLinesOn for the current line or selection.
+<leader>mt   Toggle: Call MarkLinesToggle for the current line or selection.
+<leader>me   Error:  Like \mt but using the "ErrorMsg" group, rather than the
+                     default highlight group.
+
+=============================================================================
+
+5. Customization                                    *marklines-customization*
+
+5.1. Variables                                          *marklines-variables*
+
+Marklines can be customized a bit by defining certain global variables in your
+.vimrc.
+
+let g:marklines_highlight = "ErrorMsg"                *g:marklines_highlight*
+
+This variable controls the default highlight group.  If :MarkLinesOn or
+:MarkLinesToggle is called with no highlight group argument and this variable
+is defined, the contents of this variable is used as the highlight group name.
+
+let g:marklines_noautomap = 1                         *g:marklines_noautomap*
+
+This variable being set prevents MarkLines from creating its maps.  Useful if
+you are already binding your own to different keys and don't want duplication.
+
+let g:marklines_loaded = 1                               *g:marklines_loaded*
+
+This variable would prevent MarkLines from being loaded.  But why would you
+want to do that?  Only valid if present before MarkLines is loaded.
+
+let g:marklines_mode = 3 (or 2 or 1)                       *g:marklines_mode*
+
+This variable controls which match functions are used by MarkLines.  Normally
+you shouldn't have to touch this.  MarkLines will detect on its own if you
+have matchadd(), and will use it if you do.  Otherwise, if you have :2match,
+it will use :2match.  Otherwise, it will use :match.  Setting this variable to
+3 forces the use of matchadd()  That almost certainly won't work if it wasn't
+detected automatically.  Setting this variable to 2 forces the use of :2match.
+That is probably not what you want if you have matchadd(), since matchadd()
+gives extra features like the ability to have multiple matches per plugin per
+window.  Setting this variable to 1 forces the use of :match.  The only
+legitimate use I can see for this variable is for testing for backwards
+compatibility, or for forcing MarkLines to use :match instead of :2match if
+another plugin is using :2match.  Only valid if present before MarkLines is
+loaded, though can be changed from 3 to something else later to force color
+squeezing as per :MarkLinesOn.
+
+5.2. Default Highlight Group           *MarkedLine* *marklines-default-higrp*
+
+If |g:marklines_highlight| is unset, you can set the default highlight group
+using, for example, 
+
+:hi MarkedLine ctermfg=12 guifg=#ff8030 ctermbg=3 guibg=#ff0000
+
+See |:hi| for more details.
+
+=============================================================================
+
+6. To do                                                     *marklines-todo*
+
+Not really a major thing, but it would be nice to be able to do characterwise,
+rather than linewise, marking.  Perhaps if people like this plugin and would
+like it extended.
+
+=============================================================================
+
+7. History                                                *marklines-history*
+
+1.0   Sep 25, 07   Kibab asked for a plugin that did this in #vim, and a week
+                   and a lot of documentation later, here we are.
