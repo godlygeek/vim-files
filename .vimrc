@@ -423,15 +423,5 @@ command! -nargs=1 -complete=dir Rename saveas <args> | call delete(expand("#"))
 "" Stop skipping here
 endif
 
-if &term =~ "xterm"
-  let &t_SI = "\<Esc>]12;purple\x7"
-  let &t_EI = "\<Esc>]12;blue\x7"
-endif
-
-if &term =~ "linux"
-  let &t_SI = "\<ESC>[?20;32;0c"
-  let &t_EI = "\<ESC>[?20;64;0c"
-endif
-
 "" vim:fdm=expr:fdl=0
 "" vim:fde=getline(v\:lnum)=~'^""'?'>'.(matchend(getline(v\:lnum),'""*')-2)\:'='
