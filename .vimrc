@@ -160,6 +160,7 @@ map <F4> :emenu <C-Z>
 
 """" Multi-byte
 set encoding=utf-8
+
 """ Autocommands
 if has("autocmd")
   augroup vimrcEx
