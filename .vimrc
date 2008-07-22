@@ -19,8 +19,6 @@ if 1
 let s:TERMS    = $TERM . $INTERM
 " In a terminal unless we're in a gui
 let s:TERMINAL = ! has('gui_running')
-" Support 256 colors in xterms and screen, and when we're not in a terminal
-let s:C256     = (s:TERMS =~ 'xterm' || $STY != '' || ! s:TERMINAL)
 " Support titles everywhere but on the linux console
 let s:TITLE    = ( $TERMS !~ 'linux' )
 
@@ -196,11 +194,11 @@ if has("autocmd")
 endif
 
 """ Colorscheme
-if $COLORSCHEME == "light" && s:C256
+if $COLORSCHEME == "light" && &t_Co == 256
   colorscheme autumnleaf  " 256 color light scheme
 elseif $COLORSCHEME == "light"
   colorscheme biogoo      " 16 color light scheme
-elseif s:C256
+elseif &t_Co == 256
   colorscheme brookstream " 256 color dark scheme
 else
   colorscheme torte       " 16 color dark scheme
