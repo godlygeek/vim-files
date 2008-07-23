@@ -26,8 +26,10 @@ linkfile() {
   elif [ "$FFLAG" -eq 0 -a -e "$DST/$1" ]; then
     if [ $(stat -Lc %i "$DST/$1") -ne $(stat -Lc %i "$SRC/$1") ]; then
       echo >&2 "$DST/$1 exists and -f not given; skipping."
-      return
+    elif [ "$VFLAG" -ne 0 ]; then
+      echo "Link $DST/$1 already exists, skipping."
     fi
+    return
   fi
 
   local path
