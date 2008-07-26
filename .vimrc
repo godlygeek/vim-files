@@ -138,6 +138,7 @@ filetype indent on          " Use filetype-specific indenting where available
 filetype plugin on          " Also use filetype plugins
 syntax on                   " Turn on syntax highlighting
 let g:lisp_rainbow=1        " Rainbow parentheses by depth in lisp files
+let g:is_posix=1            " I won't work on systems where /bin/sh isn't POSIX
 
 " And turn off automatic completion for C++, I'll ask for it if I want it.
 let OmniCpp_MayCompleteDot = 0
