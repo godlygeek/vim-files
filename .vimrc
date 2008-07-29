@@ -14,20 +14,12 @@ endif
 "" Skip this file unless we have +eval
 if 1
 """ Setup
-" Some variables we'll reuse later.
-" In case the $INTERM variable is set to tell me what screen is running in
-let s:TERMS    = $TERM . $INTERM
-" In a terminal unless we're in a gui
-let s:TERMINAL = ! has('gui_running')
-" Support titles everywhere but on the linux console
-let s:TITLE    = ( $TERMS !~ 'linux' )
-
 """ Settings
 """" Important
 set nocompatible            " Don't try to be vi compatible - be better.
 
 """" Terminal Setup
-if s:TERMINAL
+if ! has('gui_running')
   set ttyscroll=3           " Prefer redraw to scrolling for more than 3 lines
   set timeoutlen=700        " Wait 700 ms before timing out a mapping
   set ttimeoutlen=100       " and only 100 ms before timing out on a keypress
@@ -44,7 +36,9 @@ if s:TERMINAL
 
   set clipboard=exclude:*
 
-  if s:TITLE
+  " Set the to-status-line and from-status-line sequence for any terminal we
+  " expect to have a changeable titlebar; as they are likely wrong in terminfo
+  if $TERM != 'linux'
     " Set up the titlebar control sequences; they may be wrong in termcap/info
     exe "set t_ts=\<ESC>]2;"
     exe "set t_fs=\<C-G>"
