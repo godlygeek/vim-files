@@ -13,6 +13,15 @@
 " If you are running in a gui or if t_Co is reported as less than 88 colors,
 " no changes are made.
 
+" TODO:
+"   Be a little less braindead in handling g:colors_name - detect in advance
+"   if a colorscheme set it to something that couldn't possibly be right
+"   - that is, len(globpath(&rtp, 'colors/' . g:colors_name . '.vim')) == 0
+"
+"   Try falling back on :scriptnames to see what */colors/*.vim was loaded?
+"
+"   Do I even need to care what */colors/*.vim was loaded?
+
 " Abort if running in vi-compatible mode or the user doesn't want or need us.
 if &cp || has("gui_running") || ! has("gui") || exists('g:colorschemedegrade_loaded')
   if &cp && &verbose
@@ -199,35 +208,17 @@ endfunction
 " should make sure that we don't accidentally recurse, and that settings are
 " restored properly even if something throws.
 function! s:ColorschemeDegrade()
-  if g:colors_name =~ ".*-rgb"
-    return
-  endif
-  let saveei = &ei
-  set ei+=ColorScheme
-
-  if exists("g:colors_name")
-    let colors_name = g:colors_name
-    unlet g:colors_name
-  endif
-
   let savelz = &lz
   set lz
-
-  let rv = -1
 
   try
     let rv = s:ColorschemeDegradeImpl()
   catch
     let ex = v:exception
+    let rv = -1
   endtry
 
   let &lz = savelz
-
-  if exists("colors_name")
-    let g:colors_name = colors_name
-  endif
-
-  let &ei = saveei
 
   if exists("ex")
     echoerr 'ColorschemeDegrade failed: ' . substitute(ex, '.\{-}:', '', '')
@@ -236,31 +227,94 @@ function! s:ColorschemeDegrade()
   return rv
 endfunction
 
+function! s:HashHighlights()
+  let highlights = {}
+
+  let i = 1
+  while 1
+    if strlen(synIDattr(i, "name")) == 0
+      break
+    endif
+    let highlights[synIDtrans(i)] = ""
+    let i += 1
+  endwhile
+
+  for i in keys(highlights)
+    let highlights[i] = {}
+    let highlights[i].name           = synIDattr(i, 'name',      'gui'  )
+    let highlights[i].guifg          = synIDattr(i, 'fg',        'gui'  )
+    let highlights[i].guibg          = synIDattr(i, 'bg',        'gui'  )
+    let highlights[i].guibg          = synIDattr(i, 'sp',        'gui'  )
+    let highlights[i].ctermfg        = synIDattr(i, 'fg',        'cterm')
+    let highlights[i].ctermbg        = synIDattr(i, 'bg',        'cterm')
+
+    let highlights[i].guibold        = synIDattr(i, 'bold',      'gui')
+    let highlights[i].guiitalic      = synIDattr(i, 'italic',    'gui')
+    let highlights[i].guireverse     = synIDattr(i, 'reverse',   'gui')
+    let highlights[i].guiunderline   = synIDattr(i, 'underline', 'gui')
+    let highlights[i].guiundercurl   = synIDattr(i, 'undercurl', 'gui')
+
+    let highlights[i].ctermbold      = synIDattr(i, 'bold',      'cterm')
+    let highlights[i].ctermitalic    = synIDattr(i, 'italic',    'cterm')
+    let highlights[i].ctermreverse   = synIDattr(i, 'reverse',   'cterm')
+    let highlights[i].ctermunderline = synIDattr(i, 'underline', 'cterm')
+    let highlights[i].ctermundercurl = synIDattr(i, 'undercurl', 'cterm')
+  endfor
+
+  return highlights
+endfunction
+
 " For every highlight group, sets the cterm values to the best approximation
 " of the gui values possible given the value of &t_Co.
 function! s:ColorschemeDegradeImpl()
+  " Return if not running in an 88/256 color terminal
   if has('gui_running') || (&t_Co != 256 && &t_Co != 88)
-    return
-  endif
-
-  let g:highlights = ""
-  redir => g:highlights
-  " Normal must be set 1st for ctermfg=bg, etc, and resetting it doesn't hurt
-  silent highlight Normal
-  silent highlight
-  redir END
-
-  let hilines = split(g:highlights, '\n')
-
-  " hilines[0] is Normal.  If that doesn't use gui colors, we should probably
-  " just give up.  That way we don't muck up an already 256/88 color scheme.
-  if hilines[0] !~ 'gui[fb]g'
-    if &verbose
-      echomsg "Not degrading colorscheme; doesn't set Normal group gui colors"
+    if &verbose && ! has('gui_running')
+      echomsg "ColorschemeDegrade skipped; terminal only has" &t_Co "colors."
     endif
     return
   endif
 
+  " Initialize a hash if not already done
+  if ! exists("s:hlhash")
+    let s:hlhash = {}
+  endif
+
+  " Create references for the old and new hashes
+  let oldhash = s:hlhash
+  let newhash = s:HashHighlights()
+
+  " Create a list of colors that have changed since the last iteration
+  let modified = []
+  for hl in newhash
+    if !has_key(oldhash, hl) || oldhash[hl] != newhash[hl]
+      let modified += [hl]
+    endif
+  endfor
+
+  " And store the new highlight hash for the next iteration
+  let s:hlhash = newhash
+
+  " Abort if the scheme set some cterm colors to above 15
+  " We don't want to change a scheme that was already 88/256 color
+  " FIXME Make forceable
+  let low_color = 1
+
+  for hl in modified
+    if s:hlhash[hl].ctermfg > 15 || s:hlhash[hl].ctermbg > 15
+      let low_color = 0
+      break
+    endif
+  endfor
+
+  if low_color == 0
+    if &verbose
+      echomsg "ColorschemeDegrade skipped - colorscheme set some high colors."
+    endif
+    return
+  endif
+
+  " Then, set all the colors to approximate the gui colors.
   call filter(hilines, 'v:val !~ "links to" && v:val !~ "cleared"')
 
   let i = 0
@@ -395,20 +449,14 @@ function! s:ColorschemeDegradeImpl()
   endif
 endfunction
 
+" Dirty hacks.                                                            {{{1
+
 augroup ColorSchemeDegrade
   au!
   au ColorScheme * call s:ColorschemeDegrade()
 augroup END
 
-autocmd TermResponse * if exists("g:colors_name")
-                   \ | exe "colorscheme" g:colors_name
-                   \ | call s:ColorschemeDegrade()
-                   \ | endif
-
-if exists("g:colors_name")
-  " Don't do anything unless :colorscheme has already been called
-  call s:ColorschemeDegrade()
-endif
+call s:ColorschemeDegrade()
 
 let &cpo = s:savecpo
 unlet s:savecpo
