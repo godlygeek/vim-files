@@ -36,14 +36,70 @@ if &cp || has("gui_running") || ! has("gui") || exists('g:colorschemedegrade_loa
   finish
 endif
 
-" A local copy of rgb.txt must be included, since I can't count on it being in
-" a standard location.  But, we won't load it unless we need it.
-let s:rgb = {}
-
 let g:colorschemedegrade_loaded = 1
 
 let s:savecpo = &cpo
 set cpo&vim
+
+" A local copy of rgb.txt must be included, since I can't count on it being in
+" a standard location.  But, we won't load it unless we need it.
+let s:rgb = {}
+
+" Determine if synIDattr() is usable on this machine, or if we instead need to
+" use :redir to find information about syntax groups.  As of 7.2.000,
+" synIDattr() can't be used to check 'guisp', and no patch has been released.
+function! s:NeedRedirFallback()
+  if !exists("g:colorschemedegrade_redirfallback")
+    hi ColorSchemeDegradeTest guisp=Red gui=standout
+    if synIDattr(hlID('ColorSchemeDegradeTest'), 'sp', 'gui') == '1'
+      " We requested the 'sp' attribute, but vim thought we wanted 'standout'
+      " So, reporting of the guisp attribute is broken.  Fall back on :redir
+      let g:colorschemedegrade_redirfallback=1
+    else
+      " Reporting guisp works, use synIDattr
+      let g:colorschemedegrade_redirfallback=0
+    endif
+  endif
+  return g:colorschemedegrade_redirfallback
+endfunction
+
+function! s:Highlights()
+  let rv = {}
+
+  let i = 1
+  while 1
+    if ! hlexists(synIDattr(i, "name"))
+      break
+    endif
+
+    if !has_key(rv, synIDtrans(i))
+      let rv[synIDtrans(i)] = {}
+
+      let rv[synIDtrans(i)].name = synIDattr(synIDtrans(i), "name")
+
+      for where in [ "term", "cterm", "gui" ]
+        let rv[synIDtrans(i)][where]  = {}
+        for attr in [ "fg", "bg", "sp", "bold", "italic",
+                    \ "reverse", "underline", "undercurl" ]
+          let rv[synIDtrans(i)][where][attr] = synIDattr(i, attr, where)
+        endfor
+
+        if s:NeedRedirFallback()
+          redir => temp
+          exe 'sil hi ' . synIDattr(synIDtrans(i), "name")
+          redir END
+          let temp = substitute(temp, '^.*$', '', '')
+          let temp = matchstr(temp, where.'sp=\zs\S*\ze')
+          let rv[synIDtrans(i)][where]["sp"] = temp
+        endif
+      endfor
+    endif
+
+    let i += 1
+  endwhile
+
+  return rv
+endfunction
 
 " Script-local variables                                                  {{{1
 
@@ -211,12 +267,12 @@ function! s:ColorschemeDegrade()
   let savelz = &lz
   set lz
 
-  try
+"  try
     let rv = s:ColorschemeDegradeImpl()
-  catch
-    let ex = v:exception
-    let rv = -1
-  endtry
+"  catch
+"    let ex = v:exception
+"    let rv = -1
+"  endtry
 
   let &lz = savelz
 
@@ -227,41 +283,74 @@ function! s:ColorschemeDegrade()
   return rv
 endfunction
 
-function! s:HashHighlights()
-  let highlights = {}
+function! s:SetCtermFromGui(hl)
+  let hl = a:hl
 
-  let i = 1
-  while 1
-    if strlen(synIDattr(i, "name")) == 0
-      break
+  " Clear existing highlights
+  exe 'hi ' . hl.name . ' term=NONE cterm=NONE ctermbg=NONE ctermfg=NONE'
+
+  " Set background, foreground, and special colors - special must be last!
+  for color in [ 'bg', 'fg', 'sp' ]
+    let val = hl.gui[color]
+    let orig = val
+
+    " Skip unset colors
+    if val == -1 || val == ""
+      continue
     endif
-    let highlights[synIDtrans(i)] = ""
-    let i += 1
-  endwhile
 
-  for i in keys(highlights)
-    let highlights[i] = {}
-    let highlights[i].name           = synIDattr(i, 'name',      'gui'  )
-    let highlights[i].guifg          = synIDattr(i, 'fg',        'gui'  )
-    let highlights[i].guibg          = synIDattr(i, 'bg',        'gui'  )
-    let highlights[i].guibg          = synIDattr(i, 'sp',        'gui'  )
-    let highlights[i].ctermfg        = synIDattr(i, 'fg',        'cterm')
-    let highlights[i].ctermbg        = synIDattr(i, 'bg',        'cterm')
+    " No such thing as 'ctermsp', so if guisp is set we instead will set
+    " either ctermfg or ctermbg
+    if color == 'sp'
+      let color = 'fg'
+      if exists('g:colorschemedegrade_sp_is_bg')
+        if g:colorschemedegrade_sp_is_bg
+          color = 'bg'
+        endif
+      endif
+    endif
 
-    let highlights[i].guibold        = synIDattr(i, 'bold',      'gui')
-    let highlights[i].guiitalic      = synIDattr(i, 'italic',    'gui')
-    let highlights[i].guireverse     = synIDattr(i, 'reverse',   'gui')
-    let highlights[i].guiunderline   = synIDattr(i, 'underline', 'gui')
-    let highlights[i].guiundercurl   = synIDattr(i, 'undercurl', 'gui')
+    " Try translating anything but 'fb', 'bg', #rrggbb, and rrggbb from an
+    " rgb.txt color to a #rrggbb color
+    if val !~? '[fb]g' && val !~ '^#\=\x\{6}$'
+      if s:rgb == {}
+        let s:rgb = colorschemedegradelib#RGB()
+      endif
+      try
+        let val = s:rgb[tolower(substitute(val, ' ', '_', 'g'))]
+      catch /^/
+        echomsg "ColorschemeDegrade: Unknown color: \"" . orig . "\""
+        continue
+      endtry
+    endif
 
-    let highlights[i].ctermbold      = synIDattr(i, 'bold',      'cterm')
-    let highlights[i].ctermitalic    = synIDattr(i, 'italic',    'cterm')
-    let highlights[i].ctermreverse   = synIDattr(i, 'reverse',   'cterm')
-    let highlights[i].ctermunderline = synIDattr(i, 'underline', 'cterm')
-    let highlights[i].ctermundercurl = synIDattr(i, 'undercurl', 'cterm')
+    if val =~# '[fb]g'
+      exe 'hi ' . hl.name . ' cterm' . color . '=' . val
+    elseif val =~# '^#\=\x\{6}$'
+      let val = substitute(val, '^#', '', '')
+      let r = val[0] . val[1]
+      let g = val[2] . val[3]
+      let b = val[4] . val[5]
+      exe 'hi ' . hl.name . ' cterm' . color . '=' . s:FindClosestCode(r,g,b)
+    else
+      echoerr "ColorschemeDegrade: Failed to handle color: " . orig
+      continue
+    endif
+
+    let attrs = ""
+    for attr in [ "bold", "italic", "reverse", "underline", "undercurl" ]
+      if hl.gui[attr] == 1
+        let attrs .= ',' . attr
+      endif
+    endfor
+    if attrs != ''
+      exe 'hi ' . hl.name . ' cterm=' . attrs[1:]
+    endif
   endfor
+endfunction
 
-  return highlights
+function! s:SortNormalFirst(num1, num2)
+  return a:num1 == hlID('Normal') ? -1 : a:num2 == hlID('Normal') ? 1 : 0
 endfunction
 
 " For every highlight group, sets the cterm values to the best approximation
@@ -276,177 +365,33 @@ function! s:ColorschemeDegradeImpl()
   endif
 
   " Initialize a hash if not already done
-  if ! exists("s:hlhash")
-    let s:hlhash = {}
+  if ! exists("s:highlights")
+    let s:highlights = {}
   endif
 
-  " Create references for the old and new hashes
-  let oldhash = s:hlhash
-  let newhash = s:HashHighlights()
+  let highlights = s:Highlights()
 
   " Create a list of colors that have changed since the last iteration
   let modified = []
-  for hl in newhash
-    if !has_key(oldhash, hl) || oldhash[hl] != newhash[hl]
-      let modified += [hl]
+  for hl in keys(highlights)
+    if !has_key(s:highlights, hl) || s:highlights[hl] != highlights[hl]
+      " Only include ones that weren't already set above 15
+      if highlights[hl].cterm.fg <= 15 && highlights[hl].cterm.bg <= 15
+        let modified += [hl]
+      endif
     endif
   endfor
 
   " And store the new highlight hash for the next iteration
-  let s:hlhash = newhash
+  let s:highlights = highlights
 
-  " Abort if the scheme set some cterm colors to above 15
-  " We don't want to change a scheme that was already 88/256 color
-  " FIXME Make forceable
-  let low_color = 1
+  " Then, set all the modified colors to approximate the gui colors.
+  call sort(modified, "s:SortNormalFirst")
 
-  for hl in modified
-    if s:hlhash[hl].ctermfg > 15 || s:hlhash[hl].ctermbg > 15
-      let low_color = 0
-      break
-    endif
+  for hlnum in modified
+    call s:SetCtermFromGui(highlights[hlnum])
   endfor
 
-  if low_color == 0
-    if &verbose
-      echomsg "ColorschemeDegrade skipped - colorscheme set some high colors."
-    endif
-    return
-  endif
-
-  " Then, set all the colors to approximate the gui colors.
-  call filter(hilines, 'v:val !~ "links to" && v:val !~ "cleared"')
-
-  let i = 0
-  let end = len(hilines)
-
-  while i < end
-    let line = hilines[i]
-    let i += 1
-    while i < end && hilines[i] !~ '\<xxx\>'
-      let line .= hilines[i]
-      let i += 1
-    endwhile
-    let line = substitute(line, '\<st\(art\|op\)=.\{-}\S\@!', '', 'g')
-    let line = substitute(line, '\<c\=term.\{-}=.\{-}\S\@!', '', 'g')
-    let line = substitute(line, '\<xxx\>', '', '')
-    let line = substitute(line, '\<gui', 'cterm', 'g')
-    let line = substitute(line, '\s\+', ' ', 'g')
-
-    let items = split(line, '\%(\s\zecterm\|font\)\|=')
-
-    let higrp = items[0]
-    if len(items) % 2 != 1
-      echoerr "I cannot understand the highlight group "
-             \ . string(items) . ' at line ' . hilines[i]
-    endif
-
-    " Start clean
-    exe 'hi ' . higrp . ' term=NONE cterm=NONE ctermbg=NONE ctermfg=NONE'
-
-    for j in range((len(items)-1)/2)
-      " TODO Can we handle 16 color terminals?  Probably, if we're in an xterm.
-      let var = items[2*j+1]
-      let val = items[2*j+2]
-      if var == 'ctermsp'
-        if exists('g:colorschemedegrade_sp_is_bg') && g:colorschemedegrade_sp_is_bg
-          let var = 'ctermbg'
-        else
-          let var = 'ctermfg'
-        endif
-      endif
-      if var == 'cterm'
-        if s:ignoring('bold')
-          let val = substitute(val, 'bold', '', '')
-        endif
-        if s:ignoring('underline')
-          let val = substitute(val, 'underline', '', '')
-        endif
-        if s:ignoring('undercurl')
-          let val = substitute(val, 'undercurl', '', '')
-        endif
-        if s:ignoring('reverse') || s:ignoring('inverse')
-          let val = substitute(val, '\%(re\|in\)verse', '', '')
-        endif
-        if s:ignoring('italic')
-          let val = substitute(val, 'italic', '', '')
-        endif
-        if s:ignoring('standout')
-          let val = substitute(val, 'standout', '', '')
-        endif
-        let val = substitute(val, '\(^,*\|,*$\)', '', '')
-        let val = substitute(val, ',\+', ',', 'g')
-        let val = substitute(val, '^,*$', 'NONE', '')
-
-        exe 'hi ' . higrp . ' ' . var . '=' . val
-      elseif var =~ 'cterm[fb]g'
-        if val =~ '[FBfb]g'
-          let val = tolower(val)
-          if var =~ val
-            let val = "NONE"
-          endif
-          "echomsg 'higrp=' . higrp . ' var=' . var . ' val=' . val
-          exe 'hi ' . higrp . ' ' . var . '=' . val
-          continue
-        elseif val !~ '^#'
-          try
-            " We do need our cooked rgb.txt
-            if s:rgb == {}
-              let s:rgb = colorschemedegradelib#RGB()
-            endif
-            let val = s:rgb[tolower(substitute(val, ' ', '_', 'g'))]
-          catch
-            echomsg "Cannot translate color \"" . val . "\""
-            continue
-          endtry
-        endif
-
-        if v:termresponse =~ '>8[35];'
-              \ && exists('g:colorschemedegrade_changecube')
-              \ && g:colorschemedegrade_changecube
-          if !exists("s:lastcubepos")
-            let s:lastcubepos="15"
-            let s:colors = {}
-          endif
-
-          let tisave = &t_ti
-          let tesave = &t_te
-          set t_ti= t_te=
-
-          if has_key(s:colors, tolower(val))
-            let nr = s:colors[tolower(val)]
-          else
-            let s:lastcubepos = s:lastcubepos + 1
-
-            if s:lastcubepos >= &t_Co
-              let s:lastcubepos = 16
-            endif
-
-            let nr = s:lastcubepos
-            let s:colors[tolower(val)] = nr
-
-            if $STY == ""
-              exe 'sil !echo -n -e "\\033]4;' . nr . ';\' . val . '\\a"'
-            else
-              exe 'sil !echo -n -e "\\033P\\033]4;' . nr . ';\' . val . '\\a\\033\\\\"'
-            endif
-          endif
-
-          let &t_ti = tisave
-          let &t_te = tesave
-          exe 'hi' higrp var.'='.nr
-        else
-          let r = val[1] . val[2]
-          let g = val[3] . val[4]
-          let b = val[5] . val[6]
-          exe 'hi ' . higrp . ' ' . var . '=' . s:FindClosestCode(r, g, b)
-        endif
-      endif
-    endfor
-  endwhile
-  if exists("s:lastcubepos")
-    unlet s:lastcubepos
-  endif
 endfunction
 
 " Dirty hacks.                                                            {{{1
