@@ -68,7 +68,7 @@ function! s:Highlights()
 
   let i = 1
   while 1
-    if ! hlexists(synIDattr(i, "name"))
+    if ! hlexists(synIDattr(i, "name")) || synIDattr(i, "name") == ""
       break
     endif
 
