@@ -1,1 +1,1 @@
-source ~/.vim/syntax/doxygen.vim
+runtime! syntax/doxygen.vim

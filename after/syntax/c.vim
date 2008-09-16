@@ -1,4 +1,4 @@
-source ~/.vim/syntax/doxygen.vim
+runtime! syntax/doxygen.vim
 
 let glib_deprecated_errors = 1
 let gobject_deprecated_errors = 1
