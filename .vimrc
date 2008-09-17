@@ -23,7 +23,7 @@ if ! has('gui_running')
   set ttyscroll=3           " Prefer redraw to scrolling for more than 3 lines
   set timeoutlen=700        " Wait 700 ms before timing out a mapping
   set ttimeoutlen=100       " and only 100 ms before timing out on a keypress
-  set mouse=a               " Allow mouse use in all modes
+  set mouse=nv              " Allow mouse use in normal and visual mode
   set ttymouse=xterm2       " Terminal sends modern xterm mouse reporting.
 
   exe "set t_kb=\<C-?>"   | " My machines are all configured to send ^? for <BS>
