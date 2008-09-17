@@ -61,17 +61,6 @@ else
   let &titleold .= escape(substitute($PWD, "^".$HOME, "~", ""), ' \')
 endif
 
-"""" Gui
-if has("gui_running")
-  let &guicursor = &guicursor . ",a:blinkon0"
-  set guifont=DejaVu\ Sans\ Mono\ 7
-  set guioptions=
-  augroup gui
-    au!
-    au GuiEnter * set t_vb=
-  augroup END
-endif
-
 """" Moving Around
 set whichwrap=b,s,h,l,<,>   " Keys that normally move l-r that can change lines
 set virtualedit=block       " Let cursor go past the last char in block mode
