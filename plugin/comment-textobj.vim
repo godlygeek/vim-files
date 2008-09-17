@@ -1,31 +1,22 @@
 function! s:VAC()
-  let which = search('\(/\*\)\|\(//\)', 'bcpW')
-  let lnum1 = line('.')
-  let cnum1 = col('.')
-  let move1 = (cnum1-1 ? (cnum1-1)."l" : "")
-  if which == 3 " linewise comment
-    return "\<ESC>" . lnum1 . "G$" . mode() . "0" . move1 . "o"
-  elseif which == 2 " block comment
-    let goto1 = lnum1 . "G0" . move1
-    call search('\*/', 'ecW')
-    let goto2 = line('.') . "G0" . (col('.')-1 ? (col('.') - 1) . "l" : "")
-    return "\<ESC>" . goto1 . mode() . goto2
+  if search('\m\%#/\*', 'bcnW') || search('\m/\%#\*', 'bcnW')
+    " On /*
+    return ']*o]*[*o'
+  elseif search('\m/\*\%(\%(\*/\)\@!\_.\)*\%#\_.\{-}\%(\*/\)', 'bcnW')
+    \ || search('\m\%#\*/', 'bnW') || search('\m\*\%#/', 'bnW')
+    " Between /* and */, or on a */
+    return '[*o[*]*'
   endif
+  " Return to normal mode and sound a bell.
+  return "\<C-\>\<C-n>\<Esc>"
 endfunction
 
 function! s:VIC()
-  let which = search('\(/\*\+\%(\_s\|\*\)*.\)\|\(//\s*.\)', 'becpW')
-  let lnum1 = line('.')
-  let cnum1 = col('.')
-  let move1 = (cnum1-1 ? (cnum1-1)."l" : "")
-  if which == 3 " linewise comment
-    return "\<ESC>" . lnum1 . "G$" . mode() . "0" . move1 . "o"
-  elseif which == 2 " block comment
-    let goto1 = lnum1 . "G0" . move1
-    call search('.\_s*\*/', 'cW')
-    let goto2 = line('.') . "G0" . (col('.')-1 ? (col('.') - 1) . "l" : "")
-    return "\<ESC>" . goto1 . mode() . goto2
+  let vac = s:VAC()
+  if vac !~ '\m[\x1b]' " If the result contains an <Esc>, not in a comment
+    return vac . 'owoge'
   endif
+  return vac
 endfunction
 
 vnoremap <expr> ac <SID>VAC()
