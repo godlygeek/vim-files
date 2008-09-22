@@ -15,33 +15,65 @@ endif
 let g:terminalkeys_loaded = 1
 
 let savecpo=&cpo
-set cpo+=k
+set cpo&vim
+
+function! s:FastMap(keycode)
+  if !exists("s:fastmap_keys")
+    " <F25> through <F37> and <S-F25> through <S-F37>
+    let s:fastmap_keys = map(range(25, 37), '"<F".v:val.">"')
+    let s:fastmap_keys += map(s:fastmap_keys, '"<S-F".v:val[2:]')
+  endif
+
+  if empty(s:fastmap_keys)
+    throw "No function keys remaining!"
+  endif
+
+  let key = remove(s:fastmap_keys, 0)
+  exe 'set '.key.'='.a:keycode
+  return key
+endfunction
 
 function! s:MapAllModes(map)
   exe "map" a:map | exe "map!" a:map
 endfunction
 
-function! s:MapArrow(prefix, modifiers)
+function! s:MapArrowKeys()
   let dict = { 'A' : 'up', 'B' : 'down', 'C' : 'right', 'D' : 'left' }
-  for l in keys(dict)
-    call s:MapAllModes(a:prefix . l . " <" . a:modifiers . dict[l] . ">")
+
+  for [ letter, dir ] in items(dict)
+    exe "set <" . dir . ">=\e[1;*" . letter
+    call s:MapAllModes(s:FastMap("\eO".letter) . " <" . dir . ">")
+    call s:MapAllModes(s:FastMap("\e[".letter) . " <" . dir . ">")
   endfor
 endfunction
 
-" All modified arrow keys...
-"call s:MapArrow("\<ESC>O", "")
-call s:MapArrow("\<ESC>[1;2", "s-")
-call s:MapArrow("\<ESC>[1;3", "a-")
-call s:MapArrow("\<ESC>[1;4", "a-s-")
-call s:MapArrow("\<ESC>[1;5", "c-")
-call s:MapArrow("\<ESC>[1;7", "c-a-")
-call s:MapArrow("\<ESC>[1;8", "c-a-s-")
+function! s:MapFunctionKeys()
+  for i in range(4)
+    exe "set <F" . (i+1) . ">=\e[1;*" . nr2char(80+i)
+    call s:MapAllModes(s:FastMap("\eO" . nr2char(80+i)) . " <F" . (i+1) . ">")
+  endfor
 
-" Backspace
-call s:MapAllModes("\<C-h> <BS>")
-call s:MapAllModes("\<C-?> <BS>")
+  exe "set  <F5>=\e[15;*~"
 
-delfunction s:MapAllModes
-delfunction s:MapArrow
+  exe "set  <F6>=\e[17;*~"
+  exe "set  <F7>=\e[18;*~"
+  exe "set  <F8>=\e[19;*~"
+  exe "set  <F9>=\e[20;*~"
+  exe "set <F10>=\e[21;*~"
 
-let &cpo=savecpo
+  exe "set <F11>=\e[23;*~"
+  exe "set <F12>=\e[24;*~"
+endfunction
+
+function! s:MapBackspace()
+  call s:MapAllModes("\<C-h> <BS>")
+  call s:MapAllModes("\<C-?> <BS>")
+endfunction
+
+try
+  call s:MapArrowKeys()
+  call s:MapFunctionKeys()
+  call s:MapBackspace()
+finally
+  let &cpo=savecpo
+endtry
