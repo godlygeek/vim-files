@@ -235,11 +235,9 @@ nnoremap <silent> <C-l> :nohl<CR><C-l>
 
 " In normal/insert mode, ar inserts spaces to right align to &tw or 80 chars
 nnoremap <leader>ar :AlignRight<CR>
-inoremap <leader>ar <C-\><C-o>:AlignRight<CR>
 
 " In normal/insert mode, ac center aligns the text after it to &tw or 80 chars
-nnoremap <leader>ac :AlignCenter<CR>
-inoremap <leader>ac <C-\><C-o>:AlignCenter<CR>
+nnoremap <leader>ac :center<CR>
 
 " Arg!  I hate hitting q: instead of :q
 nnoremap q: q:iq<esc>
@@ -402,16 +400,6 @@ function! AlignRight(...)
   endif
 endfunction
 com! -nargs=? AlignRight :call AlignRight(<f-args>)
-
-function! AlignCenter(...)
-  let width = (a:0 == 1 ? a:1 : (&tw <= 0 ? 80 : &tw))
-  let line = substitute(getline('.'), '^\s*\(.\{-}\)\s*$', '\1', '')
-  let fw = width - strlen(substitute(line, '.', 'x', 'g'))
-  let left = (fw / 2 + (fw / 2 * 2 != fw))
-  let line = repeat(' ', left) . line
-  call setline(".", substitute(line, '\s*$', '', 'g'))
-endfunction
-com! -range -nargs=? AlignCenter :<line1>,<line2>call AlignCenter(<f-args>)
 
 function! Version()
   let i=1
