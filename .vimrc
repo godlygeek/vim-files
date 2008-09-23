@@ -149,6 +149,7 @@ set updatetime=2000         " Timeout for swapfile writes and CursorHold autocmd
 
 """" Command Line
 set wildmenu                " Menu completion in command mode (ex: ":e <tab>")
+set wildmode=full           " Display all choices on completion
 set wcm=<C-Z>               " Ctrl-Z in a mapping acts like <tab> on cmdline
 source $VIMRUNTIME/menu.vim " Load menus, even when non-gui, use <f4> to display
 map <F4> :emenu <C-Z>
