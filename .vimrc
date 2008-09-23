@@ -382,21 +382,47 @@ function! ModelineStub()
   return substitute(substitute(x, '\ \+', ' ', 'g'), ' $', '', '')
 endfunction
 
+" Replace tabs with spaces in a string, preserving alignment.
+function! Retab(string)
+  let rv = ''
+  let i = 0
+
+  for char in split(a:string, '\zs')
+    if char == "\t"
+      let rv .= repeat(' ', &ts - i)
+      let i = 0
+    else
+      let rv .= char
+      let i = (i + 1) % &ts
+    endif
+  endfor
+
+  return rv
+endfunction
+
+" Right align the portion of the current line to the right of the cursor.
+" If an optional argument is given, it is used as the width to align to,
+" otherwise textwidth is used if set, otherwise 80 is used.
 function! AlignRight(...)
-  let width = (a:0 == 1 ? a:1 : (&tw <= 0 ? 80 : &tw))
-  if getline(".") =~ "^\s*$"
-    call setline(".", "")
+  if getline('.') =~ '^\s*$'
+    call setline('.', '')
   else
-    if matchstr(getline('.'), '\%' . (col('.')) . 'c.') =~ '\s'
-      norm! "_diw
-    endif
-    if matchstr(getline('.'), '\%' . (col('.')-1) . 'c.') =~ '\s'
-      norm! h"_diw
-    endif
-    let spaces = width - strlen(substitute(getline('.'), '.', 'x', 'g'))
-    if spaces > 0
-      exe "norm! i\<C-r>=repeat(' ', " . spaces . ")\<CR>\<ESC>l"
-    endif
+    let line = Retab(getline('.'))
+
+    let prefix = matchstr(line, '.*\%' . virtcol('.') . 'v')
+    let suffix = matchstr(line, '\%' . virtcol('.') . 'v.*')
+
+    let prefix = substitute(prefix, '\s*$', '', '')
+    let suffix = substitute(suffix, '^\s*', '', '')
+
+    let len  = len(substitute(prefix, '.', 'x', 'g'))
+    let len += len(substitute(suffix, '.', 'x', 'g'))
+
+    let width  = (a:0 == 1 ? a:1 : (&tw <= 0 ? 80 : &tw))
+
+    let spaces = width - len
+
+    call setline('.', prefix . repeat(' ', spaces) . suffix)
   endif
 endfunction
 com! -nargs=? AlignRight :call AlignRight(<f-args>)
