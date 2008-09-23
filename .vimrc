@@ -389,15 +389,24 @@ function! AlignRight(...)
   if getline(".") =~ "^\s*$"
     call setline(".", "")
   else
-    exe "norm! i\<C-r>=repeat(' ', width - len(getline('.')))\<CR>\<ESC>l"
+    if matchstr(getline('.'), '\%' . (col('.')) . 'c.') =~ '\s'
+      norm! "_diw
+    endif
+    if matchstr(getline('.'), '\%' . (col('.')-1) . 'c.') =~ '\s'
+      norm! h"_diw
+    endif
+    let spaces = width - strlen(substitute(getline('.'), '.', 'x', 'g'))
+    if spaces > 0
+      exe "norm! i\<C-r>=repeat(' ', " . spaces . ")\<CR>\<ESC>l"
+    endif
   endif
 endfunction
 com! -nargs=? AlignRight :call AlignRight(<f-args>)
 
 function! AlignCenter(...)
   let width = (a:0 == 1 ? a:1 : (&tw <= 0 ? 80 : &tw))
-  let line = substitute(getline('.'), '^ *\(.\{-}\) *$', '\1', '')
-  let fw = width - strlen(line)
+  let line = substitute(getline('.'), '^\s*\(.\{-}\)\s*$', '\1', '')
+  let fw = width - strlen(substitute(line, '.', 'x', 'g'))
   let left = (fw / 2 + (fw / 2 * 2 != fw))
   let line = repeat(' ', left) . line
   call setline(".", substitute(line, '\s*$', '', 'g'))
