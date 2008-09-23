@@ -30,6 +30,10 @@ if ! has('gui_running')
   exe "set t_kD=\<ESC>[3~"| " and ^[[3~ for <DEL>, no matter what termcap says.
   exe "set t_kB=\<ESC>[Z" | " If the terminal has shift-tab, it's ^[[Z
 
+  " XXX Work around a vim bug:
+  " Only t_te, not t_op, gets sent when leaving an alt screen.
+  exe "set t_te=" . &t_te . &t_op
+
   if $INTERM =~ '^xterm' || $INTERM == 'rxvt-unicode'
     exe "set t_RV=\<ESC>[>c"
   endif
