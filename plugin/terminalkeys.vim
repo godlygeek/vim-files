@@ -65,15 +65,33 @@ function! s:MapFunctionKeys()
   exe "set <F12>=\e[24;*~"
 endfunction
 
-function! s:MapBackspace()
+function! s:MapOthers()
+  " <BS>
+  exe "set <BS>=\<C-?>"
   call s:MapAllModes("\<C-h> <BS>")
-  call s:MapAllModes("\<C-?> <BS>")
+
+  " <Home>/<End>
+  exe "set <Home>=\<Esc>[1;*H"
+  exe "set <End>=\<Esc>[1;*F"
+  call s:MapAllModes("\<Esc>[H  <Home>")
+  call s:MapAllModes("\<Esc>[F  <End>")
+  call s:MapAllModes("\<Esc>[1~ <Home>")
+  call s:MapAllModes("\<Esc>[4~ <End>")
+
+  " <Insert>/<Del>/<PageUp>/<PageDown>
+  exe "set <Insert>=\<Esc>[2;*~"
+  exe "set <Del>=\<Esc>[3;*~"
+  exe "set <PageUp>=\<Esc>[5;*~"
+  exe "set <PageDown>=\<Esc>[6;*~"
+
+  " <S-Tab>
+  exe "set <S-Tab>=\<Esc>[Z"
 endfunction
 
 try
   call s:MapArrowKeys()
   call s:MapFunctionKeys()
-  call s:MapBackspace()
+  call s:MapOthers()
 finally
   let &cpo=savecpo
 endtry
