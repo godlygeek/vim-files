@@ -20,8 +20,9 @@ set cpo&vim
 function! s:FastMap(keycode)
   if !exists("s:fastmap_keys")
     " <F25> through <F37> and <S-F25> through <S-F37>
-    let s:fastmap_keys = map(range(25, 37), '"<F".v:val.">"')
-    let s:fastmap_keys += map(s:fastmap_keys, '"<S-F".v:val[2:]')
+    let keys  = map(range(25, 37), '"<F".v:val.">"')
+    let keys2 = map(keys, '"<S-F".v:val[2:]')
+    let s:fastmap_keys = keys + keys2
   endif
 
   if empty(s:fastmap_keys)
