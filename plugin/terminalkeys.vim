@@ -73,10 +73,10 @@ function! s:MapOthers()
   " <Home>/<End>
   exe "set <Home>=\<Esc>[1;*H"
   exe "set <End>=\<Esc>[1;*F"
-  call s:MapAllModes("\<Esc>[H  <Home>")
-  call s:MapAllModes("\<Esc>[F  <End>")
-  call s:MapAllModes("\<Esc>[1~ <Home>")
-  call s:MapAllModes("\<Esc>[4~ <End>")
+  call s:MapAllModes(s:FastMap("\e[H")  . " <Home>")
+  call s:MapAllModes(s:FastMap("\e[F")  . " <End>")
+  call s:MapAllModes(s:FastMap("\e[1~") . " <Home>")
+  call s:MapAllModes(s:FastMap("\e[4~") . " <End>")
 
   " <Insert>/<Del>/<PageUp>/<PageDown>
   exe "set <Insert>=\<Esc>[2;*~"
