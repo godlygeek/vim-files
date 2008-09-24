@@ -191,11 +191,11 @@ if has("autocmd")
 endif
 
 """ Colorscheme
-if $COLORSCHEME == "light" && (&t_Co == 256 || has('gui_running'))
+if $COLORSCHEME == "light" && (&t_Co > 16 || has('gui_running'))
   colorscheme autumnleaf  " 256 color light scheme
 elseif $COLORSCHEME == "light"
   colorscheme biogoo      " 16 color light scheme
-elseif &t_Co == 256 || has('gui_running')
+elseif &t_Co > 16 || has('gui_running')
   colorscheme brookstream " 256 color dark scheme
 else
   colorscheme torte       " 16 color dark scheme
