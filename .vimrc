@@ -5,15 +5,15 @@
 "
 " NOTE:
 " If you're editing this in Vim and don't know how folding works, type zR to
-" unfold them all.
+" unfold everything.  And then read ":help folding".
 
 if version < 700
   set noloadplugins
 endif
 
-"" Skip this file unless we have +eval
-if 1
-""" Setup
+" Skip this file unless we have +eval and Vim 7.0 or greater.  With an older
+" Vim, I'd rather just plain ol' vi emulation reminding me to upgrade.
+if version > 700
 """ Settings
 """" Important
 set nocompatible            " Don't try to be vi compatible - be better.
@@ -52,7 +52,8 @@ let &titlestring  = hostname() . '> '
                 \ . '%{substitute(expand("%:p:h"),"^".$HOME,"~","")}'
                 \ . ' || %{&ft=~"^man"?"man":&ro?"view":"vim"} %f %m'
 
-if $TITLE != ""
+" When vim exits and the original title can't be restored, use this string:
+if !empty($TITLE)
   " We know the last title set by the shell. (My zsh config exports this.)
   let &titleold = $TITLE
 else
@@ -61,101 +62,131 @@ else
   let &titleold .= escape(substitute($PWD, "^".$HOME, "~", ""), ' \')
 endif
 
-"""" Moving Around
-set whichwrap=b,s,h,l,<,>   " Keys that normally move l-r that can change lines
-set virtualedit=block       " Let cursor go past the last char in block mode
-" Jumping to files searches subdirectories and system include directories
-set path=**,/usr/local/include,/usr/include;
+"""" Moving Around/Editing
+set whichwrap=b,s,h,l,<,>   " <BS> <Space> h l <Left> <Right> can change lines
+set virtualedit=block       " Let cursor move past the last char in <C-v> mode
+set scrolloff=3             " Keep 3 context lines above and below the cursor
+set backspace=2             " Allow backspacing over autoindent, EOL, and BOL
+set showmatch               " Briefly jump to a paren once it's balanced
+set matchtime=2             " (for only .2 seconds).
 
 """" Searching and Patterns
-set incsearch               " Incrementally search on /, don't wait for return.
-set ignorecase              " Case insensitive searches
-set smartcase               " Unless uppercase letters are used in the query
-set hlsearch                " Highlight searches by default
+set ignorecase              " Default to using case insensitive searches,
+set smartcase               " unless uppercase letters are used in the regex.
+set hlsearch                " Highlight searches by default.
+set incsearch               " Incrementally search while typing a /regex
 
-"""" Display
-set lazyredraw              " Don't repaint the screen while scripts are running
-set scrolloff=3             " Keep at least 3 lines below and above the cursor
-if has("multi_byte") && &enc == "utf-8"
-  set list                  " Show tabs, trailing spaces, and nonbreaking spaces
-  let s:arr = nr2char(9655) " Use U+25B7 (▷) for an arrow
-  let s:dot = nr2char(8901) " Use U+22C5 (⋅) for a very light dot
-  exe "set listchars=tab:"    . s:arr . s:dot
-  exe "set listchars+=trail:" . s:dot
-  if version > 700
-    exe "set listchars+=nbsp:"  . s:dot
-  endif
-endif
-set number                  " Number the lines
-set numberwidth=1           " Use 1 col plus 1 space for numbers, grow as needed
+"""" Windows, Buffers
+set noequalalways           " Don't keep resizing all windows to the same size
+set hidden                  " Hide modified buffers when they are abandoned
+set swb=useopen,usetab      " Allow changing tabs/windows for quickfix/:sb/etc
+set splitright              " New windows open to the right of the current one
 
-"""" Windows
-set noequalalways           " Don't automatically resize all windows to be equal
-set hidden                  " Hide any buffer not in a window
-if exists(":tab")           " Try moving to another window when changing buffers
-  set switchbuf=useopen,
-               \usetab
-else                        " Try other windows, and other tabs if available
-  set switchbuf=useopen
-endif
-set splitright              " New windows open right of the current one
-
-"""" Messages, Info, Status
-set shortmess+=a            " Use [+] [RO] [w] for modified, read-only, modified
-set showcmd                 " Display what command is waiting for an operator
-set ruler                   " Show pos below the win if there's no status line
-set laststatus=2            " Always show statusline, even if only 1 window
-set report=0                " Notify me whenever any lines have changed
-set confirm                 " Y-N-C prompt if closing with unsaved changes
-set vb t_vb=                " Disable visual bell!  I hate that flashing.
-let &statusline = '%<%f%{&mod?"[+]":""}%r%{&fenc !~ "^$\\|utf-8" || &bomb ? "[".&fenc.(&bomb?"-bom":"")."]" : ""}%=%{exists("actual_curbuf")&&bufnr("")==actual_curbuf?CountMatches(1):""} %15.(%l,%c%V %P%)'
-
-"""" Editing
-set backspace=2             " Backspace over autoindent, EOL, and BOL
-if version > 700
-  set completeopt-=preview  " Don't show preview menu for tags
-endif
-set infercase               " Try to guess at case for insertions if not a match
-set showmatch               " Briefly jump to the previous matching paren
-set matchtime=2             " For .2 seconds
-set formatoptions+=n        " gq recognizes numbered lists, and will try to
-set formatoptions+=1        " break before, not after, a 1 letter word
-
-"""" Coding
-set formatoptions-=tc       " I can format for myself, thank you very much
-set expandtab               " When I press tab, insert spaces
-set shiftwidth=2            " Each tab is represented with 2 spaces for indents
-set softtabstop=2           " As well as for pressing <TAB>
-set tags=./tags;/home       " Tags file can be ./tags, ../tags, ..., /home/tags.
-set showfulltag             " Show more information while completing tags
-filetype indent on          " Use filetype-specific indenting where available
-filetype plugin on          " Also use filetype plugins
-syntax on                   " Turn on syntax highlighting
-let g:lisp_rainbow=1        " Rainbow parentheses by depth in lisp files
-let g:is_posix=1            " I won't work on systems where /bin/sh isn't POSIX
-
-" And turn off automatic completion for C++, I'll ask for it if I want it.
-let OmniCpp_MayCompleteDot = 0
-let OmniCpp_MayCompleteArrow = 0
+"""" Insert completion
+set completeopt-=preview    " Don't show preview menu for tags.
+set infercase               " Try to adjust insert completions for case.
 
 """" Folding
 set foldmethod=syntax       " By default, use syntax to determine folds
 set foldlevelstart=99       " All folds open by default
 
+"""" Text Formatting
+set formatoptions=q         " Format text with gq, but don't format as I type.
+set formatoptions+=n        " gq recognizes numbered lists, and will try to
+set formatoptions+=1        " break before, not after, a 1 letter word
+
+"""" Display
+set number                  " Display line numbers
+set numberwidth=1           " using only 1 column (and 1 space) while possible
+
+if &enc =~ '^u\(tf\|cs\)'   " When running in a Unicode environment,
+  set list                  " visually represent certain invisible characters:
+  let s:arr = nr2char(9655) " using U+25B7 (▷) for an arrow, and
+  let s:dot = nr2char(8901) " using U+22C5 (⋅) for a very light dot,
+  " display tabs as an arrow followed by some dots (▷⋅⋅⋅⋅⋅⋅⋅),
+  exe "set listchars=tab:"    . s:arr . s:dot
+  " and display trailing and non-breaking spaces as U+22C5 (⋅).
+  exe "set listchars+=trail:" . s:dot
+  exe "set listchars+=nbsp:"  . s:dot
+  " Also show an arrow+space (↪ ) at the beginning of any wrapped long lines?
+  " I don't like this, but I probably would if I didn't use line numbers.
+  " let &sbr=nr2char(8618).' '
+endif
+
+"""" Messages, Info, Status
+set vb t_vb=                " Disable all bells.  I hate ringing/flashing.
+set confirm                 " Y-N-C prompt if closing with unsaved changes.
+set showcmd                 " Show incomplete normal mode commands as I type.
+set report=0                " : commands always print changed line count.
+set shortmess+=a            " Use [+]/[RO]/[w] for modified/readonly/written.
+set ruler                   " Show some info, even without statuslines.
+set laststatus=2            " Always show statusline, even if only 1 window.
+
+let &statusline = '%<%f%{&mod?"[+]":""}%r%'
+ \ . '{&fenc !~ "^$\\|utf-8" || &bomb ? "[".&fenc.(&bomb?"-bom":"")."]" : ""}'
+ \ . '%='
+ \ . '%{exists("actual_curbuf")&&bufnr("")==actual_curbuf?CountMatches(1):""}'
+ \ . '%15.(%l,%c%V %P%)'
+
+"""" Tabs/Indent Levels
+set tabstop=8               " Real tab characters are 8 spaces wide,
+set shiftwidth=2            " but an indent level is 2 spaces wide.
+set softtabstop=2           " <BS> over an autoindent deletes both spaces.
+set expandtab               " Use spaces, not tabs, for autoindent/tab key.
+
+"""" Tags
+set tags=./tags;/home       " Tags can be in ./tags, ../tags, ..., /home/tags.
+set showfulltag             " Show more information while completing tags.
+
 """" Reading/Writing
-set backup                  " Make backups of files not matching 'backupskip'
-set noautowrite             " This should be default, but I worry...
-set updatetime=2000         " Timeout for swapfile writes and CursorHold autocmd
+set noautowrite             " Never write a file unless I request it.
+set noautowriteall          " NEVER.
+set noautoread              " Don't automatically re-read changed files.
+set modeline                " Allow vim options to be embedded in files;
+set modelines=5             " they must be within the first or last 5 lines.
+set ffs=unix,dos,mac        " Try recognizing dos, unix, and mac line endings.
+
+"""" Backups/Swap Files
+" Make sure that the directory where we want to put swap/backup files exists.
+if ! len(glob("~/.backup/"))
+  echomsg "Backup directory ~/.backup doesn't exist!"
+endif
+
+set writebackup             " Make a backup of the original file when writing
+set backup                  " and don't delete it after a succesful write.
+set backupskip=             " There are no files that shouldn't be backed up.
+set backupdir^=~/.backup    " Backups are written to ~/.backup/ if possible.
+set directory^=~/.backup    " Swap files are also written to ~/.backup, too.
+set updatetime=2000         " Write swap files after 2 seconds of inactivity.
+set backupext=~             " Backup for "file" is "file~"
 
 """" Command Line
-set wildmenu                " Menu completion in command mode (ex: ":e <tab>")
-set wildmode=full           " Display all choices on completion
-set wcm=<C-Z>               " Ctrl-Z in a mapping acts like <tab> on cmdline
-source $VIMRUNTIME/menu.vim " Load menus, even when non-gui, use <f4> to display
+set wildmenu                " Menu completion in command mode on <Tab>
+set wildmode=full           " <Tab> cycles between all matching choices.
+set wcm=<C-Z>               " Ctrl-Z in a mapping acts like <Tab> on cmdline
+source $VIMRUNTIME/menu.vim " Load menus (this would be done anyway in gvim)
+" <F4> triggers the menus, even in terminal vim.
 map <F4> :emenu <C-Z>
 
-"""" Multi-byte
-set encoding=utf-8
+"""" Per-Filetype Scripts
+" NOTE: These define autocmds, so they should come before any other autocmds.
+"       That way, a later autocmd can override the result of one defined here.
+filetype on                 " Enable filetype detection,
+filetype indent on          " use filetype-specific indenting where available,
+filetype plugin on          " also allow for filetype-specific plugins,
+syntax on                   " and turn on per-filetype syntax highlighting.
+
+""" Plugin Settings
+let g:lisp_rainbow=1        " Color parentheses by depth in LISP files.
+let g:is_posix=1            " I don't use systems where /bin/sh isn't POSIX.
+
+" Turn off automatic omnicompletion for C++, I'll ask for it if I want it.
+let [ OmniCpp_MayCompleteDot, OmniCpp_MayCompleteArrow ] = [ 0, 0 ]
+
+" When using a gvim-only colorscheme in terminal vim with CSApprox
+"   - Disable the bold and italic attributes completely
+"   - Use the color specified by 'guisp' as the foreground color.
+let g:CSApprox_attr_map = { 'bold' : '', 'italic' : '', 'sp' : 'fg' }
 
 """ Autocommands
 if has("autocmd")
@@ -164,29 +195,30 @@ if has("autocmd")
   " In plain-text files and svn commit buffers, wrap automatically at 78 chars
   au FileType text,svn setlocal tw=78 fo+=t
 
-  " In all files, try to jump back to the last spot cursor was in before exiting
+  " Try to jump to the last spot the cursor was at in a file when reading it.
   au BufReadPost *
       \ if line("'\"") > 0 && line("'\"") <= line("$") |
       \   exe "normal g`\"" |
       \ endif
 
-  " When opening a file, set fdm to something sane for that filetype.
-  au BufReadPre * setlocal foldmethod=syntax
-  au BufReadPre *.xml,*.xsd setlocal foldmethod=indent
-
-  " Use :make to check a script with perl
+  " Use :make to syntax check a perl script.
   au FileType perl set makeprg=perl\ -c\ %\ $* errorformat=%f:%l:%m
 
-  " Use :make to compile c, even without a makefile
-  au FileType c,cpp if glob('Makefile') == "" | let &mp="gcc -o %< %" | endif
+  " Use :make to compile C, even without a makefile
+  au FileType c   if glob('[Mm]akefile') == "" | let &mp="gcc -o %< %" | endif
 
-  " Switch to the directory of the current file, unless it's a help file.
+  " Use :make to compile C++, too
+  au FileType cpp if glob('[Mm]akefile') == "" | let &mp="g++ -o %< %" | endif
+
+  " When reading a file, :cd to its parent directory unless it's a help file.
   au BufEnter * if &ft != 'help' | silent! cd %:p:h | endif
+
+  " Add doxygen highlighting to C and C++ files.
+  au FileType c,cpp nested let &l:filetype = expand("<amatch>") . ".doxygen"
 
   " Insert Vim-version as X-Editor in mail headers
   au FileType mail sil 1  | call search("^$")
                \ | sil put! ='X-Editor: Vim-' . Version()
-
   augroup END
 endif
 
