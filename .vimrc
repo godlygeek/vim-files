@@ -7,49 +7,38 @@
 " If you're editing this in Vim and don't know how folding works, type zR to
 " unfold everything.  And then read ":help folding".
 
-if version < 700
-  set noloadplugins
-endif
 
 " Skip this file unless we have +eval and Vim 7.0 or greater.  With an older
 " Vim, I'd rather just plain ol' vi emulation reminding me to upgrade.
 if version > 700
 """ Settings
-"""" Important
-set nocompatible            " Don't try to be vi compatible - be better.
+"""" Mouse, Keyboard, Terminal
+set mouse=nv                " Allow mouse use in normal and visual mode.
+set ttymouse=xterm2         " Most terminals send modern xterm mouse reporting
+                            " but this isn't always detected in GNU Screen.
+set timeoutlen=2000         " Wait 2 seconds before timing out a mapping
+set ttimeoutlen=100         " and only 100 ms before timing out on a keypress.
+set lazyredraw              " Avoid redrawing the screen mid-command.
+set ttyscroll=3             " Prefer redraw to scrolling for more than 3 lines
 
-"""" Terminal Setup
-if ! has('gui_running')
-  set ttyscroll=3           " Prefer redraw to scrolling for more than 3 lines
-  set timeoutlen=700        " Wait 700 ms before timing out a mapping
-  set ttimeoutlen=100       " and only 100 ms before timing out on a keypress
-  set mouse=nv              " Allow mouse use in normal and visual mode
-  set ttymouse=xterm2       " Terminal sends modern xterm mouse reporting.
+" XXX Fix a vim bug: Only t_te, not t_op, gets sent when leaving an alt screen
+exe "set t_te=" . &t_te . &t_op
 
-  " XXX Work around a vim bug:
-  " Only t_te, not t_op, gets sent when leaving an alt screen.
-  exe "set t_te=" . &t_te . &t_op
-
-  if $INTERM =~ '^xterm' || $INTERM == 'rxvt-unicode'
-    exe "set t_RV=\<ESC>[>c"
-  endif
-
-  set clipboard=exclude:*
-
-  " Set the to-status-line and from-status-line sequence for any terminal we
-  " expect to have a changeable titlebar; as they are likely wrong in terminfo
-  if $TERM != 'linux'
-    " Set up the titlebar control sequences; they may be wrong in termcap/info
-    exe "set t_ts=\<ESC>]2;"
-    exe "set t_fs=\<C-G>"
-  endif
-endif
-
+""""" Titlebar
 set title                   " Turn on titlebar support
 
-"  Titlebar string is  hostname> ${PWD:s/^$HOME/~} || (view|vim) filename ([+]|)
-let &titlestring  = hostname() . '> '
-                \ . '%{substitute(expand("%:p:h"),"^".$HOME,"~","")}'
+" Set the to- and from-status-line sequences to match the xterm titlebar
+" manipulation begin/end sequences for any terminal where
+"   a) We don't know for a fact that these sequences would be wrong, and
+"   b) the sequences were not already set in terminfo.
+" NOTE: This would be nice to fix in terminfo, instead...
+if &term !~? '^\v(linux|cons|vt)' && empty(&t_ts) && empty(&t_fs)
+  exe "set t_ts=\<ESC>]2;"
+  exe "set t_fs=\<C-G>"
+endif
+
+"  Titlebar string: hostname> ${PWD:s/^$HOME/~} || (view|vim) filename ([+]|)
+let &titlestring  = hostname() . '> ' . '%{expand("%:p:~:h")}'
                 \ . ' || %{&ft=~"^man"?"man":&ro?"view":"vim"} %f %m'
 
 " When vim exits and the original title can't be restored, use this string:
@@ -57,9 +46,18 @@ if !empty($TITLE)
   " We know the last title set by the shell. (My zsh config exports this.)
   let &titleold = $TITLE
 else
-  "  Old title was probably just  hostname> ${PWD:s/^$HOME/~}
-  let &titleold  = ($WINDOW == "" ? '[' .$WINDOW. '] ' : '') . hostname() . '> '
-  let &titleold .= escape(substitute($PWD, "^".$HOME, "~", ""), ' \')
+  "  Old title was probably something like: hostname> ${PWD:s/^$HOME/~}
+  let &titleold = hostname() . '> ' . fnamemodify($PWD,':p:~:s?/$??')
+endif
+
+""""" Encoding/Multibyte
+if has('multi_byte')        " If multibyte support is available and
+  if &enc !~ '^u\(tf\|cs\)' " the current encoding is not Unicode,
+    if empty(&tenc)         " default to
+      let &tenc = &enc      " using the current encoding for terminal output
+    endif                   " unless another terminal encoding was already set
+    set enc=utf-8           " but use utf-8 for all data internally
+  endif
 endif
 
 """" Moving Around/Editing
