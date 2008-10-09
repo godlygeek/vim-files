@@ -186,6 +186,9 @@ let [ OmniCpp_MayCompleteDot, OmniCpp_MayCompleteArrow ] = [ 0, 0 ]
 "   - Use the color specified by 'guisp' as the foreground color.
 let g:CSApprox_attr_map = { 'bold' : '', 'italic' : '', 'sp' : 'fg' }
 
+" Enable syntax folding in perl scripts.
+let [ g:perl_fold, g:perl_fold_blocks ] = [ 1, 1 ]
+
 """ Autocommands
 if has("autocmd")
   augroup vimrcEx
