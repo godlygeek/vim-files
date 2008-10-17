@@ -4,7 +4,7 @@
 " Version:     0.1
 
 " Abort if running in vi-compatible mode or the user doesn't want us.
-if &cp || exists('g:tabular_loaded')
+if &cp " || exists('g:tabular_loaded')
   if &cp && &verbose
     echo "Not loading Tabular in compatible mode."
   endif
@@ -13,215 +13,184 @@ endif
 
 let g:tabular_loaded = 1
 
+" Stupid vimscript crap                                                   {{{1
 let s:savecpo = &cpo
 set cpo&vim
 
 " Function definitions                                                    {{{1
 
-" General tabularizing functions                                          {{{2
-
-function! s:PadLeft(string, fieldwidth)
-  return repeat(" ", a:fieldwidth - strlen(a:string)) . a:string
+" Align a string within a field                                           {{{2
+function! s:Right(string, fieldwidth)
+  let spaces = a:fieldwidth - strlen(substitute(a:string, '.', 'x', 'g'))
+  return repeat(" ", spaces) . a:string
 endfunction
 
-function! s:PadRight(string, fieldwidth)
-  return a:string . repeat(" ", a:fieldwidth - strlen(a:string))
+function! s:Left(string, fieldwidth)
+  let spaces = a:fieldwidth - strlen(substitute(a:string, '.', 'x', 'g'))
+  return a:string . repeat(" ", spaces)
 endfunction
 
-" Currently unused.
-function! s:PadBoth(string, fieldwidth)
-  let spaces = fieldwidth - strlen(string)
+function! s:Center(string, fieldwidth)
+  let spaces = a:fieldwidth - strlen(substitute(a:string, '.', 'x', 'g'))
   let right = spaces / 2
   let left = right + (right * 2 != spaces)
   return repeat(" ", left) . a:string . repeat(" ", right)
 endfunction
 
-" Utility functions                                                       {{{2
-
-" Takes an array of strings and an array of numbers.  If the length of
-" strings[i] is greater than the value at numbers[i], assigns the length of
-" strings[i] to numbers[i].
-function! s:UpdateLongest(numbers, strings)
-  while len(a:numbers) < len(a:strings)
-    call add(a:numbers, 0)
-  endwhile
-
-  for i in range(len(a:strings))
-    if len(a:strings[i]) > a:numbers[i]
-      let a:numbers[i] = len(a:strings[i])
-    endif
-  endfor
+" Remove spaces around a string                                           {{{2
+function! s:StripTrailingSpaces(string)
+  return matchstr(a:string, '^.\{-}\ze\s*$')
 endfunction
 
-" Like split(), but store the delims rather than the text between them.
-function! s:RevSplit(string, delim)
-  let rv1 = []
-  let rv2 = []
-  let idx = 0
+function! s:StripLeadingSpaces(string)
+  return matchstr(a:string, '^\s*\zs.*$')
+endfunction
+
+" Split a string into fields and delimiters                               {{{2
+" Like split(), but include the delimiters as elements
+" All odd numbered elements are delimiters
+" All even numbered elements are non-delimiters
+function! s:SplitDelim(string, delim)
+  let pre  = split(a:string, a:delim, 1)
+  let post = []
+
+  let last = 0
+
   while 1
-    let x = matchlist(a:string, a:delim, idx)
-    if x == []
+    let idx = match(a:string, a:delim, last)
+    if idx == -1
       break
     endif
 
-    let idx = match(a:string, a:delim, idx) + strlen(x[0])
-    "echo 'idx=' . idx
-    "echo 'mtchlst:'
-    "echo x
+    let matchlist = matchlist(a:string, a:delim, last)
 
-    if x[1] == "" && x[2] == ""
-      let rv1 += [ "" ]
-      let rv2 += [ x[0] ]
-    else
-      let rv1 += [ x[1] ]
-      let rv2 += [ x[2] ]
+    let length = strlen(matchlist[0])
+
+    let matchedgroups = join(matchlist[1:-1], '')
+    if strlen(matchedgroups)
+      let length = strlen(matchedgroups)
     endif
+
+    let post += [ remove(pre, 0) ]
+    let post += [ (strlen(matchedgroups) ? matchedgroups : matchlist[0]) ]
+    let last = idx + strlen(matchlist[0])
   endwhile
-  "echo 'rv1:'
-  "echo rv1
-  "echo 'rv2:'
-  "echo rv2
-  return [ rv1, rv2 ]
+
+  let post += [ remove(pre, 0) ]
+
+  if (!empty(pre))
+    echoerr "Internal error: Some elements not handled!!"
+  endif
+
+  return post
 endfunction
 
 " Handle us some tabularizing and padding on a delimiter                  {{{2
 
-function! Tabular(delim, d_left_extra, d_right_extra) range
-  let longest   = []
-  let longestd1 = []
-  let longestd2 = []
-  let splits    = []
-  let delims1   = []
-  let delims2   = []
+function! Tabular(delim, ...) range
+  let top = a:firstline
+  let bot = a:lastline
 
-  let beg = a:firstline
-  let end = a:lastline
+  let formatpat = '\%([lrc]\d\+\)'
 
-  if beg == end
-    if getline(beg) !~ a:delim
-      return
-    endif
-    while getline(beg-1) =~ a:delim
-      let beg -= 1
-    endwhile
-    while getline(end+1) =~ a:delim
-      let end += 1
-    endwhile
+  if a:0 == 1 && type(a:1) == type({}) && has_key(a:1, 'format')
+    " Undocumented forwards compatibility!
+    let formatstring = a:1['format']
+  elseif a:0 == 1 && type(a:1) == type("")
+    let formatstring = a:1
+  else
+    let formatstring = "l0c0"
   endif
-  "echohl error
-  "echo "beg=" . beg . " end=" . end
-  "echohl none
 
-  if beg == end
+  if formatstring !~? formatpat . '\+'
+    echoerr "Invalid format specified!"
     return
   endif
 
-  let oldlz = (&lz ? "lz" : "nolz")
-  set lz
+  let format = split(formatstring, formatpat . '\zs')
 
-  for i in range(beg, end)
-    if getline(i) !~ a:delim
-      call add(splits,  [])
-      call add(delims1, [])
-      call add(delims2, [])
-      let i = i + 1
-      continue
+  " If given one line, pick a reasonable range.
+  if top == bot
+    if getline(top) !~ a:delim
+      return
     endif
-    let splitline = split(getline(i), a:delim, 1)
-    let splitdelim = s:RevSplit(getline(i), a:delim)
+    while getline(top-1) =~ a:delim
+      let top -= 1
+    endwhile
+    while getline(bot+1) =~ a:delim
+      let bot += 1
+    endwhile
+  endif
 
-    call s:UpdateLongest(longest,  splitline)
-    call s:UpdateLongest(longestd1, splitdelim[0])
-    call s:UpdateLongest(longestd2, splitdelim[1])
-    call add(splits, splitline)
-    call add(delims1, splitdelim[0])
-    call add(delims2, splitdelim[1])
+  " If we couldn't find a reasonable range, quit.
+  if top == bot
+    return
+  endif
+
+  let lines = map(range(top, bot), 's:SplitDelim(getline(v:val), a:delim)')
+
+  for line in lines
+    let line[0] = s:StripTrailingSpaces(line[0])
+    for i in range(2, len(line)-1, 2)
+      let line[i] = s:StripLeadingSpaces(s:StripTrailingSpaces(line[i]))
+    endfor
   endfor
 
-  for i in range(len(splits))
-    if splits[i] == []
-      continue
-    endif
-
-    let line = ""
-    for j in range(len(splits[i]))
-      let fl = longest[j]
-      if j < len(splits[i]) - 1
-        let line .= s:PadRight(splits[i][j], longest[j])
-
-        let line .= s:PadLeft(delims1[i][j], longestd1[j] + a:d_left_extra)
-        let line .= s:PadRight(delims2[i][j], longestd2[j] + a:d_right_extra)
+  let maxes = []
+  for line in lines
+    for i in range(len(line))
+      if i == len(maxes)
+        let maxes += [ strlen(line[i]) ]
       else
-        let line .= splits[i][j]
+        if maxes[i] <= strlen(line[i])
+          let maxes[i] = strlen(line[i])
+        endif
       endif
     endfor
-    call setline(beg + i, line)
   endfor
 
-  exe "set " . oldlz
+  let nr = top
 
-  "echo beg
-  "echo end
-  "echo splits
-  "echo longestd1
-  "echo delims1
-  "echo longestd2
-  "echo delims2
+  for line in lines
+    for i in range(len(line))
+      let how = format[i % len(format)][0]
+      let pad = format[i % len(format)][1:-1]
+
+      if how =~? 'l'
+        let field = s:Left(line[i], maxes[i])
+      elseif how =~? 'r'
+        let field = s:Right(line[i], maxes[i])
+      elseif how =~? 'c'
+        let field = s:Center(line[i], maxes[i])
+      endif
+
+      let line[i] = field . repeat(" ", pad)
+    endfor
+
+    let newline = join(line, '')
+
+    let endidx = -1
+    while newline[endidx : endidx] == ' '
+      let endidx -= 1
+    endwhile
+
+    let newline = newline[0:endidx]
+
+    call setline(nr, newline)
+    let nr += 1
+  endfor
 endfunction
 
 " Mappings for tabularizing                                               {{{1
+nnoremap <silent> <leader>t= :call Tabular('[^!<lt>>=%/*+&<bar>-]\zs\%(<lt><lt>=\<bar>>>=\<bar>%=\<bar>\/=\<bar>\*=\<bar>+=\<bar>-=\<bar><bar>=\<bar>&=\<bar>=\)[=~]\@!', 'l1r1')<CR>
+nnoremap <silent> <leader>ts :call Tabular('\(  \)\s*', 'l0r0')<CR>
+nnoremap <silent> <leader>t<space> :call Tabular('  ', 'l0r0')<CR>
 
-let s:equals_match_expr = '\%([!<>=]\)\@<!\s*\([+-/*.]\?\)\(=\)\s*\%([=~]\)\@!'
-
-exe "nnoremap <silent> <leader>t= :call Tabular(\'" . s:equals_match_expr . "\', 1, 1)<CR>"
-nnoremap <silent> <leader>t<space> :call Tabular('  ', 0, 0)<CR>
-nnoremap <silent> <leader>ts :call Tabular('\(  \)\s*', 0, 0)<CR>
-
-" Handling of AutoAlign while typing                                      {{{1
-
-if 0
-if &bs " We require backspacing (<C-u>) to delete BOL for our AutoAlign maps.
-       " Couldn't find a way around it.
-
-  let s:one_equals = '^[^=]*=[^=]*$'
-
-  function! s:AutoAlignEquals()
-    " Don't do this in a plain text file..
-    " We should really handle the mapping dynamically with autocmds.
-    if &ft == ""
-      return
-    endif
-
-    call Tabular(s:equals_match_expr, 1, 1)
-  endfunction
-
-  " For this to work, backspacing must be allowed to move over BOL
-  function! s:AutoAlignAfterCarriageReturn()
-    if synIDattr(synIDtrans(synID(197,66,1)), "name") == "Comment"
-      return ""
-    endif
-
-    let SID  = matchstr(expand('<sfile>'), '<SNR>\d\+_\zeAutoAlignAfterCarriageReturn$')
-    let line = line('.')
-
-    return "\<up>\<C-r>=" . SID . "AutoAlignEquals()\<CR>\<BS>\<down>\<C-u>"
-       \ . "\<C-r>=line('.') == " . line . " ? " . '"\<C-u>"' . " : ''\<CR>"
-       \ . "\<C-r>=line('.') == " . line . " ? " . '"\<C-u>"' . " : ''\<CR>\<CR>"
-  endfunction
-
-  " Can't be an inoremap or abbreviation expansion on <CR> fails
-  imap <silent> <CR> <CR><plug>AutoAlignAfterCarriageReturn
-
-  " Has to be a separate map because it needs <expr>
-  inoremap <silent> <expr> <plug>AutoAlignAfterCarriageReturn <SID>AutoAlignAfterCarriageReturn()
-
-endif
-endif
-
-" End AutoAlign                                                            }}}
-
+" Stupid vimscript crap, again                                            {{{1
 let &cpo = s:savecpo
 unlet s:savecpo
+
+" Examples (may be used for regression tests one day?)                    {{{1
 
 " Press  \t<space>  to see this script in action.  Lovely.
 " this is  a quick test  of the capabilities of  my new script
@@ -240,5 +209,26 @@ unlet s:savecpo
 " string a *= '1234';
 " Though, the line below here == won't be changed
 " since we don't count two = in one line.
+
+" Not automatically aligned with \t=, though they contain =
+" a <= b
+" a >= b
+" a =~ b
+" a =~? b
+" a =~# b
+" a != b
+" a == b
+
+" Automatically aligned
+" a = b
+" a &= b
+" a |= b
+" a -= b
+" a += b
+" a *= b
+" a /= b
+" a %= b
+" a <<= b
+" a >>= b
 
 " vim:set sw=2 sts=2 fdm=marker:
