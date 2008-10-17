@@ -131,9 +131,11 @@ function! Tabular(delim, ...) range
 
   for line in lines
     let line[0] = s:StripTrailingSpaces(line[0])
-    for i in range(2, len(line)-1, 2)
-      let line[i] = s:StripLeadingSpaces(s:StripTrailingSpaces(line[i]))
-    endfor
+    if len(line) >= 3
+      for i in range(2, len(line)-1, 2)
+        let line[i] = s:StripLeadingSpaces(s:StripTrailingSpaces(line[i]))
+      endfor
+    endif
   endfor
 
   let maxes = []
