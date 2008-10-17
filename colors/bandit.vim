@@ -1,4 +1,3 @@
-" vim: tw=0 ts=4 sw=4 noet ft=colours_bandit foldmethod=marker
 " Vim colour file
 " Maintainer:	A. S. Budden
 
