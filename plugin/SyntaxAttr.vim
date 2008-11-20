@@ -39,10 +39,14 @@ function! SynIDattrExt(id)
       if what =~# '^[fb]g$' && rv[where][what] =~ -1
         let rv[where][what] = what
       elseif what =~# '^[fb]g#$' && rv[where][what] =~# '^\(-1\|[fb]g\)$'
-        if ! exists("normdict")
-          let normdict = SynIDattrExt(hlID("Normal"))
+        if rv.id == hlID("Normal")
+          let rv[where][what] = rv[where][what[0:-2]]
+        else
+          if ! exists("normdict")
+            let normdict = SynIDattrExt(hlID("Normal"))
+          endif
+          let rv[where][what] = normdict[where][what]
         endif
-        let rv[where][what] = normdict[where][what]
       endif
     endfor
   endfor
