@@ -32,6 +32,7 @@
 'showmarks_include'	showmarks.txt	/*'showmarks_include'*
 'showmarks_textother'	showmarks.txt	/*'showmarks_textother'*
 'showmarks_textupper'	showmarks.txt	/*'showmarks_textupper'*
+:CSApproxSnapshot	CSApprox.txt	/*:CSApproxSnapshot*
 :CVSEdit	vcscommand.txt	/*:CVSEdit*
 :CVSEditors	vcscommand.txt	/*:CVSEditors*
 :CVSUnedit	vcscommand.txt	/*:CVSUnedit*
@@ -65,6 +66,7 @@
 :TlistUpdate	taglist.txt	/*:TlistUpdate*
 :VCSAdd	vcscommand.txt	/*:VCSAdd*
 :VCSAnnotate	vcscommand.txt	/*:VCSAnnotate*
+:VCSBlame	vcscommand.txt	/*:VCSBlame*
 :VCSCommit	vcscommand.txt	/*:VCSCommit*
 :VCSDelete	vcscommand.txt	/*:VCSDelete*
 :VCSDiff	vcscommand.txt	/*:VCSDiff*
@@ -72,6 +74,7 @@
 :VCSInfo	vcscommand.txt	/*:VCSInfo*
 :VCSLock	vcscommand.txt	/*:VCSLock*
 :VCSLog	vcscommand.txt	/*:VCSLog*
+:VCSRemove	vcscommand.txt	/*:VCSRemove*
 :VCSRevert	vcscommand.txt	/*:VCSRevert*
 :VCSReview	vcscommand.txt	/*:VCSReview*
 :VCSStatus	vcscommand.txt	/*:VCSStatus*
@@ -165,10 +168,13 @@ VCSCommandCVSExec	vcscommand.txt	/*VCSCommandCVSExec*
 VCSCommandCommitOnWrite	vcscommand.txt	/*VCSCommandCommitOnWrite*
 VCSCommandDeleteOnHide	vcscommand.txt	/*VCSCommandDeleteOnHide*
 VCSCommandDiffSplit	vcscommand.txt	/*VCSCommandDiffSplit*
+VCSCommandDisableAll	vcscommand.txt	/*VCSCommandDisableAll*
 VCSCommandDisableExtensionMappings	vcscommand.txt	/*VCSCommandDisableExtensionMappings*
 VCSCommandDisableMappings	vcscommand.txt	/*VCSCommandDisableMappings*
 VCSCommandEdit	vcscommand.txt	/*VCSCommandEdit*
 VCSCommandEnableBufferSetup	vcscommand.txt	/*VCSCommandEnableBufferSetup*
+VCSCommandMapPrefix	vcscommand.txt	/*VCSCommandMapPrefix*
+VCSCommandMappings	vcscommand.txt	/*VCSCommandMappings*
 VCSCommandResultBufferNameExtension	vcscommand.txt	/*VCSCommandResultBufferNameExtension*
 VCSCommandResultBufferNameFunction	vcscommand.txt	/*VCSCommandResultBufferNameFunction*
 VCSCommandSVKExec	vcscommand.txt	/*VCSCommandSVKExec*
@@ -215,6 +221,7 @@ csapprox-design	CSApprox.txt	/*csapprox-design*
 csapprox-eterm	CSApprox.txt	/*csapprox-eterm*
 csapprox-gnome-terminal	CSApprox.txt	/*csapprox-gnome-terminal*
 csapprox-gui-support	CSApprox.txt	/*csapprox-gui-support*
+csapprox-hooks	CSApprox.txt	/*csapprox-hooks*
 csapprox-intro	CSApprox.txt	/*csapprox-intro*
 csapprox-iterm.app	CSApprox.txt	/*csapprox-iterm.app*
 csapprox-konsole	CSApprox.txt	/*csapprox-konsole*
@@ -222,6 +229,7 @@ csapprox-kterm	CSApprox.txt	/*csapprox-kterm*
 csapprox-limitations	CSApprox.txt	/*csapprox-limitations*
 csapprox-mlterm	CSApprox.txt	/*csapprox-mlterm*
 csapprox-mrxvt	CSApprox.txt	/*csapprox-mrxvt*
+csapprox-palettes	CSApprox.txt	/*csapprox-palettes*
 csapprox-pterm	CSApprox.txt	/*csapprox-pterm*
 csapprox-putty	CSApprox.txt	/*csapprox-putty*
 csapprox-requirements	CSApprox.txt	/*csapprox-requirements*
@@ -234,17 +242,23 @@ csapprox-terminal.app	CSApprox.txt	/*csapprox-terminal.app*
 csapprox-terminals-bad	CSApprox.txt	/*csapprox-terminals-bad*
 csapprox-terminals-good	CSApprox.txt	/*csapprox-terminals-good*
 csapprox-toc	CSApprox.txt	/*csapprox-toc*
+csapprox-transparency	CSApprox.txt	/*csapprox-transparency*
 csapprox-urxvt	CSApprox.txt	/*csapprox-urxvt*
 csapprox-wterm	CSApprox.txt	/*csapprox-wterm*
 csapprox-xfce4-terminal	CSApprox.txt	/*csapprox-xfce4-terminal*
 csapprox-xiterm	CSApprox.txt	/*csapprox-xiterm*
 csapprox-xterm	CSApprox.txt	/*csapprox-xterm*
 csapprox.vim	CSApprox.txt	/*csapprox.vim*
+cvscommand-changes	vcscommand.txt	/*cvscommand-changes*
 g%	matchit.txt	/*g%*
 g:CSApprox_approximator_function	CSApprox.txt	/*g:CSApprox_approximator_function*
 g:CSApprox_attr_map	CSApprox.txt	/*g:CSApprox_attr_map*
 g:CSApprox_eterm	CSApprox.txt	/*g:CSApprox_eterm*
 g:CSApprox_extra_rgb_txt_dirs	CSApprox.txt	/*g:CSApprox_extra_rgb_txt_dirs*
+g:CSApprox_hook_post	CSApprox.txt	/*g:CSApprox_hook_post*
+g:CSApprox_hook_pre	CSApprox.txt	/*g:CSApprox_hook_pre*
+g:CSApprox_hook_{scheme}_post	CSApprox.txt	/*g:CSApprox_hook_{scheme}_post*
+g:CSApprox_hook_{scheme}_pre	CSApprox.txt	/*g:CSApprox_hook_{scheme}_pre*
 g:CSApprox_konsole	CSApprox.txt	/*g:CSApprox_konsole*
 g:CSApprox_loaded	CSApprox.txt	/*g:CSApprox_loaded*
 g:CSApprox_redirfallback	CSApprox.txt	/*g:CSApprox_redirfallback*
