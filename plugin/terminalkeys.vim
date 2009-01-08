@@ -51,6 +51,7 @@ function! s:MapFunctionKeys()
   for i in range(4)
     exe "set <F" . (i+1) . ">=\e[1;*" . nr2char(80+i)
     call s:MapAllModes(s:FastMap("\eO" . nr2char(80+i)) . " <F" . (i+1) . ">")
+    call s:MapAllModes(s:FastMap("\e[1" . (i+1) . "~") . " <F" . (i+1) . ">")
   endfor
 
   exe "set  <F5>=\e[15;*~"
