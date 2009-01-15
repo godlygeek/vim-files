@@ -1,3 +1,6 @@
 [submodule "runtimes/CSApprox"]
 	path = runtimes/CSApprox
 	url = git@github.com:godlygeek/csapprox.git
+[submodule "runtimes/netlib"]
+	path = runtimes/netlib
+	url = git@github.com:godlygeek/netlib.git
