@@ -24,15 +24,7 @@ function! s:scp(src, dest)
     return -1
   endif
 
-  let args = ' '
-
-  call system('ssh -o VisualHostKey=no -V')
-
-  if !v:shell_error
-    let args .= ' -o VisualHostKey=no '
-  endif
-
-  echo system('scp' . args . shellescape(a:src) . ' ' . shellescape(a:dest))
+  echo system('scp ' . shellescape(a:src) . ' ' . shellescape(a:dest))
 
   if v:shell_error
     return -1
