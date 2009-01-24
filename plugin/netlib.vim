@@ -3,12 +3,13 @@ if exists("g:netlib_loaded")
 endif
 
 let g:netlib_loaded = 1
+let g:loaded_netrwPlugin = 'replaced with netlib'
 
 let s:savecpo = &cpo
 set cpo&vim
 
 try
-  augroup netlib
+  augroup Network
     au!
     au BufReadCmd    *://* call netlib#HandleBufRead    (expand("<amatch>"))
     au FileReadCmd   *://* call netlib#HandleFileRead   (expand("<amatch>"))
