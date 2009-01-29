@@ -47,6 +47,8 @@ function! s:handler.write(path, file) dict
   endif
 
   call writefile(readfile(a:file, 'b'), a:path, 'b')
+
+  return 1
 endfunction
 
 call netlib#RegisterHandler('file', 'default', s:handler, s:priority)
