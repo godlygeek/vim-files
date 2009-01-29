@@ -1,39 +1,32 @@
-let s:options = {}
+let s:aliases = {}
 
-function! s:InternalSet(host, key, val)
-  " XXX Enforce that host, key and val are strings?
-  "     At least host and key should probably be strings...
-
-  if !has_key(s:options, a:host)
-    let s:options[a:host] = {}
+function! netsettings#SetAliasOption(alias, key, val)
+  if type(a:alias) != type('') || type(a:key) != type('')
+    throw "netsettings.exception: Bad arguments for SetAliasOption()"
   endif
 
-  " XXX Warn on overwrite?  Require force flag?
-  let s:options[a:host][a:key] = a:val
-endfunction
-
-function! netsettings#SetOption(key, val)
-  call s:InternalSet('', a:key, a:val)
-endfunction
-
-function! netsettings#SetHostOption(host, key, val)
-  call s:InternalSet(a:host, a:key, a:val)
-endfunction
-
-function! netsettings#GetOption(host, key, val)
-  let host = a:host
-
-  if has_key(a:options, a:host) && has_key(a:options[a:host], a:key)
-    return a:options[a:host][a:key]
-  elseif has_key(a:options[''], a:key)
-    return a:options[''][a:key]
-  else
-    throw "netsettings.exception: no such key"
+  if !has_key(s:aliases, a:alias)
+    let s:aliases[a:alias] = {}
   endif
+
+  let s:aliases[a:alias][a:key] = a:val
+endfunction
+
+function! netsettings#GetAliasOptions(alias)
+  return deepcopy(get(s:aliases, a:alias, {}))
+endfunction
+
+function! netsettings#DeleteAlias(alias)
+  try
+    unlet s:aliases[a:alias]
+  catch
+  endtry
 endfunction
 
 
 
+
+" Functions for prioritizing handlers per protocol
 let s:netlib_handler_priorities = {}
 
 function! netsettings#SetHandlerPriority(protocol, handler, priority)
@@ -56,6 +49,7 @@ function! netsettings#GetHandlerPriority(protocol, handler)
   throw "netsettings.exception: no such handler"
 endfunction
 
+" Comparator for objects of type [ 'handlername', priority ]
 function! s:PrioSort(item1, item2)
   if a:item1[1] > a:item2[1]
     return -1
@@ -66,6 +60,8 @@ function! s:PrioSort(item1, item2)
   endif
 endfunction
 
+" Return a list of handler names for a given protocol, sorted from highest
+" priority to lowest.
 function! netsettings#HandlerList(protocol)
   if !has_key(s:netlib_handler_priorities, a:protocol)
     let s:netlib_handler_priorities[a:protocol] = {}
