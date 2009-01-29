@@ -67,7 +67,12 @@ function! s:ReadFileIntoBuffer(file)
   let savecpo = &cpo
   try
     set cpo-=a cpo-=A cpo-=f cpo-=F
-    sil exe 'r' v:cmdarg a:file
+    try
+      exe 'r' v:cmdarg a:file
+    catch /^Vim\%((\a\+)\)\=:E325/
+      " The user will have already responded to this...
+      " There's no reason for us to print (another) message about it.
+    endtry
   finally
     let &cpo = savecpo
   endtry
@@ -77,7 +82,7 @@ function! s:WriteFileFromBuffer(file)
   let savecpo = &cpo
   try
     set cpo-=a cpo-=A cpo-=f cpo-=F
-    sil exe line("'[") . ',' . line("']") . 'w!' v:cmdarg s:tempfile
+    exe line("'[") . ',' . line("']") . 'w!' v:cmdarg s:tempfile
   finally
     let &cpo = savecpo
   endtry
