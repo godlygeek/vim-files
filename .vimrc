@@ -304,16 +304,8 @@ nnoremap <silent> <F12> :set hlsearch! <bar> set hlsearch?<CR>
 " Q formats paragraphs, instead of entering ex mode
 noremap Q gq
 
-" * and # search for next/previous of selected text when used in visual mode
-function! s:VSetSearch()
-  let old = @"
-  norm! gvy
-  let @/ = '\V' . substitute(escape(@", '\'), '\n', '\\n', 'g')
-  let @" = old
 endfunction
 
-vnoremap * :<C-u>call <SID>VSetSearch()<CR>/<CR>
-vnoremap # :<C-u>call <SID>VSetSearch()<CR>?<CR>
 
 " <space> toggles folds opened and closed
 nnoremap <space> za
