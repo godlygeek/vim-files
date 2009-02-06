@@ -64,7 +64,7 @@ endif
 
 """"" Encoding/Multibyte
 if has('multi_byte')        " If multibyte support is available and
-  if &enc !~ '^u\(tf\|cs\)' " the current encoding is not Unicode,
+  if &enc !~? 'utf-\=8'     " the current encoding is not Unicode,
     if empty(&tenc)         " default to
       let &tenc = &enc      " using the current encoding for terminal output
     endif                   " unless another terminal encoding was already set
@@ -73,6 +73,7 @@ if has('multi_byte')        " If multibyte support is available and
 endif
 
 """" Moving Around/Editing
+set nostartofline           " Avoid moving cursor to BOL when jumping around
 set whichwrap=b,s,h,l,<,>   " <BS> <Space> h l <Left> <Right> can change lines
 set virtualedit=block       " Let cursor move past the last char in <C-v> mode
 set scrolloff=3             " Keep 3 context lines above and below the cursor
@@ -139,6 +140,7 @@ let &statusline = '%<%f%{&mod?"[+]":""}%r%'
  \ . '%15.(%l,%c%V %P%)'
 
 """" Tabs/Indent Levels
+set autoindent              " Do dumb autoindentation when no filetype is set
 set tabstop=8               " Real tab characters are 8 spaces wide,
 set shiftwidth=2            " but an indent level is 2 spaces wide.
 set softtabstop=2           " <BS> over an autoindent deletes both spaces.
@@ -226,12 +228,15 @@ if has("autocmd")
   " When reading a file, :cd to its parent directory unless it's a help file.
   au BufEnter * if &ft != 'help' | silent! cd %:p:h | endif
 
-  " Add doxygen highlighting to C and C++ files.
-  au FileType c,cpp nested let &l:filetype = expand("<amatch>") . ".doxygen"
+  " Add doxygen, glib, and gtk highlighting to C and C++ files.
+  au FileType c,cpp nested let &l:filetype = expand("<amatch>")
+                            \ . ".doxygen.glib.gobject.gdk.gdkpixbuf.gtk.gimp"
 
   " Insert Vim-version as X-Editor in mail headers
   au FileType mail sil 1  | call search("^$")
                \ | sil put! ='X-Editor: Vim-' . Version()
+
+  au Filetype * let &l:ofu = (len(&ofu) ? &ofu : 'syntaxcomplete#Complete')
   augroup END
 endif
 
@@ -323,6 +328,10 @@ vnoremap <space> zf
 vmap <C-V> <ESC>`<<C-v>`>
 vmap V     <ESC>`<V`>
 vmap v     <ESC>`<v`>
+
+" Make { and } in visual mode stay in the current column unless 'sol' is set.
+vnoremap <expr> { line("'{") . 'G'
+vnoremap <expr> } line("'}") . 'G'
 
 " <leader>bsd inserts BSD copyright notice
 nnoremap <leader>bsd :BSD<CR>
