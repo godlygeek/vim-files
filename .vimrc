@@ -7,11 +7,23 @@
 " If you're editing this in Vim and don't know how folding works, type zR to
 " unfold everything.  And then read ":help folding".
 
+" Stop behaving like vi; vim's enhancements are better.
+set nocompatible
 
-" Skip this file unless we have +eval and Vim 7.0 or greater.  With an older
-" Vim, I'd rather just plain ol' vi emulation reminding me to upgrade.
-if version > 700
+" Skip the rest of this file unless we have +eval and Vim 7.0 or greater.
+" With an older Vim, I'd rather just plain ol' vi-like features reminding me
+" to upgrade.
+if version >= 700
 """ Settings
+"""" Locations searched for scripts
+let rtp = []                 " Add anything in a 'runtimes' subdirectory of
+for dir in split(&rtp, ',')  " 'runtimepath' to 'runtimepath'
+  let rtp += [ dir ]
+  let rtp += split(globpath(dir, 'runtimes/*'), '\n')
+endfor
+let &rtp = join(rtp, ',')
+unlet rtp
+
 """" Mouse, Keyboard, Terminal
 set mouse=nv                " Allow mouse use in normal and visual mode.
 set ttymouse=xterm2         " Most terminals send modern xterm mouse reporting
