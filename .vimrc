@@ -289,9 +289,6 @@ nnoremap <leader>ar :AlignRight<CR>
 " In normal/insert mode, ac center aligns the text after it to &tw or 80 chars
 nnoremap <leader>ac :center<CR>
 
-" Arg!  I hate hitting q: instead of :q
-nnoremap q: q:iq<esc>
-
 " Zoom in on the current window with <leader>z
 nmap <leader>z <Plug>ZoomWin
 
@@ -350,25 +347,6 @@ nnoremap <C-w><C-e> :winc w<CR>
 
 " Y behaves like D rather than like dd
 nnoremap Y y$
-
-" Backspace should delete to the black hole register, not move left
-nnoremap <BS> "_X
-
-" Alt + Arrows
-nnoremap  <a-right>  gt
-nnoremap  <a-left>   gT
-
-" Ctrl + Arrows
-nnoremap  <c-up>     {
-nnoremap  <c-down>   }
-nnoremap  <c-right>  El
-nnoremap  <c-down>   Bh
-
-" Shift + Arrows
-nnoremap  <s-up>     Vk
-nnoremap  <s-down>   Vj
-nnoremap  <s-right>  vl
-nnoremap  <s-left>   vh
 
 """ Abbreviations
 function! EatChar(pat)
