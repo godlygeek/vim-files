@@ -127,7 +127,7 @@ function! windowlayout#GetLayout()
   call s:BeginFunction()
 
   try
-    let rv = s:GetLayoutImpl(0, windowlayout#WindowPositions())
+    let rv = s:GetLayoutImpl(windowlayout#WindowPositions())
 
     for hookname in s:usedhooks
       for win in s:GetWindowsFromLayout(rv)
@@ -302,7 +302,8 @@ endfunction
 " Finds all lines that completely bisect a region in the given direction,
 " then sorts the windows by which region they fall in, then recurses on each
 " region.
-function! s:GetLayoutImpl(dir, winlines)
+" NOTE: The varargs shouldn't be used by the caller, only the implementation
+function! s:GetLayoutImpl(winlines, ...)
   if type(a:winlines) == type({})
     return a:winlines " Leaf node
   endif
@@ -318,7 +319,24 @@ function! s:GetLayoutImpl(dir, winlines)
   call remove(bounds.xs, 0)
   call remove(bounds.ys, 0)
 
-  if a:dir == 1
+  " Use the supplied direction, default to horizontal
+  let dir = (a:0 == 1 ? a:1 : 0)
+
+  if a:0 != 1
+    " Figure out how the top level is split
+    echomsg "Iterating over " . string(bounds.xs)
+    for i in bounds.xs[0:-2]
+      let left = filter(copy(a:winlines), 'v:val.R < i')
+      if len(left) == max(map(left, 'v:val.winnr'))
+        " First split was vertical, pretend that everything is the only
+        " element in a horizontal split covering the whole layout.
+        " s:expand() needs to start with a horizontal split to behave.
+        return [ s:GetLayoutImpl(a:winlines, 1) ]
+      endif
+    endfor
+  endif
+
+  if dir == 1
     let major = bounds.xs
     let minor = bounds.ys
     let check = bounds.bottom - bounds.top
@@ -334,11 +352,11 @@ function! s:GetLayoutImpl(dir, winlines)
   for i in major
     " Find windows whose (bottom|right) edge lies on this (x|y)
     let matches = copy(a:winlines)
-    call filter(matches, 'v:val[(a:dir == 0 ? "B" : "R")] + 1 == i')
+    call filter(matches, 'v:val[(dir == 0 ? "B" : "R")] + 1 == i')
 
     let sum = 0
     for match in matches
-      exe "let sum += match." . (a:dir == 0 ? "w" : "h") . " + 1"
+      exe "let sum += match." . (dir == 0 ? "w" : "h") . " + 1"
     endfor
 
     if sum == check
@@ -356,7 +374,7 @@ function! s:GetLayoutImpl(dir, winlines)
 
   for win in a:winlines
     for i in range(len(blocklines) - 1)
-      let bound = (a:dir == 0 ? "T" : "R")
+      let bound = (dir == 0 ? "T" : "R")
       if win[bound] > blocklines[i] && win[bound] < blocklines[i+1]
         let blocks[i] += [win]
         break
@@ -373,7 +391,7 @@ function! s:GetLayoutImpl(dir, winlines)
     if len(block) == 1
       let rv += block
     else
-      let rv += [ s:GetLayoutImpl(1-a:dir, block) ]
+      let rv += [ s:GetLayoutImpl(block, 1-dir) ]
     endif
   endfor
 
