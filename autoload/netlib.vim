@@ -82,7 +82,7 @@ function! s:WriteFileFromBuffer(file)
   let savecpo = &cpo
   try
     set cpo-=a cpo-=A cpo-=f cpo-=F
-    exe line("'[") . ',' . line("']") . 'w!' v:cmdarg s:tempfile
+    exe line("'[") . ',' . line("']") . 'w!' v:cmdarg a:file
   finally
     let &cpo = savecpo
   endtry
@@ -92,7 +92,7 @@ function! s:AppendFileFromBuffer(file)
   let savecpo = &cpo
   try
     set cpo-=a cpo-=A cpo-=f cpo-=F
-    exe line("'[") . ',' . line("']") . 'w!' v:cmdarg '>>' s:tempfile
+    exe line("'[") . ',' . line("']") . 'w!' v:cmdarg '>>' a:file
   finally
     let &cpo = savecpo
   endtry
