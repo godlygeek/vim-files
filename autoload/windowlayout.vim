@@ -1,6 +1,7 @@
 " -- PUBLIC FUNCTIONS -- "
 
 " Check how many windows are between a given window and a given edge
+" NOTE: Return is 0 if the window touches the given edge
 function! windowlayout#DistanceFromLeft(winnum)
   return s:NumWindowsInDir(a:winnum, 'h')
 endfunction
@@ -18,6 +19,7 @@ function! windowlayout#DistanceFromBottom(winnum)
 endfunction
 
 " Check which window is above/below/left of/right of a given window
+" NOTE: Return is -1 if there is no other window in that direction
 function! windowlayout#WindowAbove(winnum)
   return s:WindowInDir(a:winnum, 'k')
 endfunction
@@ -35,7 +37,7 @@ function! windowlayout#WindowRightOf(winnum)
 endfunction
 
 " Retrieve the location of a single window
-" Returns a dictionary with at least L, R, T, B, x, y, w, h, where
+" Guaranteed to return a dictionary with at least L, R, T, B, x, y, w, h where
 "   L and R are the leftmost/rightmost column inside this window
 "   T and B are the topmost/bottommost row inside this window
 "   x and y are the leftmost column/topmost row inside this window
@@ -213,6 +215,7 @@ let s:currwinnr = {}
 let s:prevwinnr = {}
 
 function! windowlayout#SaveWindows()
+  " Save old % and #, disable autocmds as we move the cursor between windows
   if s:savecount == 0
     let s:currwinnr[tabpagenr()] = winnr()
     wincmd p
@@ -271,7 +274,7 @@ endfunction
 " region.
 function! s:GetLayoutImpl(dir, winlines)
   if type(a:winlines) == type({})
-    return a:winlines
+    return a:winlines " Leaf node
   endif
 
   let rv = []
@@ -280,6 +283,8 @@ function! s:GetLayoutImpl(dir, winlines)
 
   call sort(bounds.xs, "s:NumCompare")
   call sort(bounds.ys, "s:NumCompare")
+
+  " Ignore the leftmost and topmost lines
   call remove(bounds.xs, 0)
   call remove(bounds.ys, 0)
 
@@ -447,7 +452,7 @@ function! s:Scale(layout, ...)
   endif
 
   for win in a:layout
-    if type(win) == type({})
+    if type(win) == type({}) " Leaf node
       let win.L = (win.L - 1) * neww / oldw + 1
       if win.R == oldw
         let win.R = neww
@@ -460,7 +465,7 @@ function! s:Scale(layout, ...)
       else
         let win.B = (win.B - 1) * newh / oldh + 1
       endif
-    else
+    else " recurse on this non-leaf node
       call s:Scale(win, oldh, newh, oldw, neww)
     endif
     unlet win
