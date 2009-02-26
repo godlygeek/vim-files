@@ -174,6 +174,18 @@ function! windowlayout#SetLayout(layout)
   finally
     call s:EndFunction()
   endtry
+
+  let windows = s:GetWindowsFromLayout(a:layout)
+
+  let prev = filter(copy(windows), 'has_key(v:val, "prev")')
+  if len(prev) == 1
+    sil! exe prev[0].winnr . "wincmd w"
+  endif
+
+  let curr = filter(copy(windows), 'has_key(v:val, "curr")')
+  if len(curr) == 1
+    sil! exe curr[0].winnr . "wincmd w"
+  endif
 endfunction
 
 " -- PRIVATE FUNCTIONS -- "
@@ -493,8 +505,6 @@ endfunction
 function! s:FixViews(layout)
   redraw
   let windows = s:GetWindowsFromLayout(a:layout)
-  let curr = filter(copy(windows), 'has_key(v:val, "curr")')
-  let prev = filter(copy(windows), 'has_key(v:val, "prev")')
 
   for win in windows
     try
@@ -506,14 +516,6 @@ function! s:FixViews(layout)
     catch /.*/
     endtry
   endfor
-
-  if len(prev) == 1
-    sil! exe prev[0].winnr . "wincmd w"
-  endif
-
-  if len(curr) == 1
-    sil! exe curr[0].winnr . "wincmd w"
-  endif
 endfunction
 
 function! s:Expand(dir, layout)
