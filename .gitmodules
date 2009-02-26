@@ -4,3 +4,6 @@
 [submodule "runtimes/netlib"]
 	path = runtimes/netlib
 	url = git@github.com:godlygeek/netlib.git
+[submodule "runtimes/windowlayout"]
+	path = runtimes/windowlayout
+	url = git@github.com:godlygeek/windowlayout.git
