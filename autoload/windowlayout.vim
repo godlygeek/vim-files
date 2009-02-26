@@ -51,53 +51,55 @@ endfunction
 " Every window has a key "line" set to the currently selected line
 " Every window has a key "midline" set line in the center of the window
 function! windowlayout#GetWindowInfo(winnum)
-  call windowlayout#SaveWindows()
+  call s:BeginFunction()
 
-  let rv = {}
+  try
+    let rv = {}
 
-  let left  = windowlayout#WindowLeftOf(a:winnum)
-  let above = windowlayout#WindowAbove(a:winnum)
-  let right = windowlayout#WindowRightOf(a:winnum)
-  let down  = windowlayout#WindowBelow(a:winnum)
+    let left  = windowlayout#WindowLeftOf(a:winnum)
+    let above = windowlayout#WindowAbove(a:winnum)
+    let right = windowlayout#WindowRightOf(a:winnum)
+    let down  = windowlayout#WindowBelow(a:winnum)
 
-  exe a:winnum . "wincmd w"
+    exe a:winnum . "wincmd w"
 
-  let rv.winnr = a:winnum
-  let rv.bufnr = winbufnr(a:winnum)
-  let rv.line = line(".")
-  let rv.midline = rv.line - winline() + (winheight(".") + 1) / 2
+    let rv.winnr = a:winnum
+    let rv.bufnr = winbufnr(a:winnum)
+    let rv.line = line(".")
+    let rv.midline = rv.line - winline() + (winheight(".") + 1) / 2
 
-  let rv.w = winwidth('.')
-  let rv.h = winheight('.')
+    let rv.w = winwidth('.')
+    let rv.h = winheight('.')
 
-  if left == a:winnum
-    " Leftmost window
-    let rv.x = 1
-  else
-    let leftpos = windowlayout#GetWindowInfo(left)
-    let rv.x = leftpos.x + leftpos.w + 1
-  endif
+    if left == -1
+      " Leftmost window
+      let rv.x = 1
+    else
+      let leftpos = windowlayout#GetWindowInfo(left)
+      let rv.x = leftpos.x + leftpos.w + 1
+    endif
 
-  if above == a:winnum
-    " Topmost window
-    let rv.y = 1
-  else
-    let toppos = windowlayout#GetWindowInfo(above)
-    let rv.y = toppos.y + toppos.h + 1
-  endif
+    if above == -1
+      " Topmost window
+      let rv.y = 1
+    else
+      let toppos = windowlayout#GetWindowInfo(above)
+      let rv.y = toppos.y + toppos.h + 1
+    endif
 
-  let rv.L = rv.x
-  let rv.T = rv.y
-  let rv.R = rv.L + rv.w - 1
-  let rv.B = rv.T + rv.h - 1
+    let rv.L = rv.x
+    let rv.T = rv.y
+    let rv.R = rv.L + rv.w - 1
+    let rv.B = rv.T + rv.h - 1
 
-  if s:currwinnr[tabpagenr()] == a:winnum
-    let rv.curr = 1
-  elseif s:prevwinnr[tabpagenr()] == a:winnum
-    let rv.prev = 1
-  endif
-
-  call windowlayout#RestoreWindows()
+    if s:currwinnr[tabpagenr()] == a:winnum
+      let rv.curr = 1
+    elseif s:prevwinnr[tabpagenr()] == a:winnum
+      let rv.prev = 1
+    endif
+  finally
+    call s:EndFunction()
+  endtry
 
   return rv
 endfunction
@@ -107,104 +109,71 @@ endfunction
 function! windowlayout#WindowPositions()
   let rv = []
 
-  call windowlayout#SaveWindows()
-  for i in range(1, winnr('$'))
-    let rv += [ windowlayout#GetWindowInfo(i) ]
-  endfor
-  call windowlayout#RestoreWindows()
+  call s:BeginFunction()
+
+  try
+    for i in range(1, winnr('$'))
+      let rv += [ windowlayout#GetWindowInfo(i) ]
+    endfor
+  finally
+    call s:EndFunction()
+  endtry
 
   return rv
 endfunction
 
 " Gets a structure that can be passed to SetLayout() to restore all windows
 function! windowlayout#GetLayout()
-  let savewiw = &wiw
-  let savewmw = &wmw
-  let saveei  = &ei
+  call s:BeginFunction()
 
-  set wiw=1 wmw=0 ei=all
+  try
+    let rv = s:GetLayoutImpl(0, windowlayout#WindowPositions())
 
-  call windowlayout#SaveWindows()
-
-  let rv = s:GetLayoutImpl(0, windowlayout#WindowPositions())
-
-  for hookname in s:usedhooks
-    let dict = {}
-    let dict.function = s:savehooks[hookname]
-    for win in s:GetWindowsFromLayout(rv)
-      exe win.winnr . "wincmd w"
-      call dict.function(win)
+    for hookname in s:usedhooks
+      for win in s:GetWindowsFromLayout(rv)
+        exe win.winnr . "wincmd w"
+        call s:savehooks[hookname](win)
+      endfor
     endfor
-    unlet dict
-  endfor
-
-  call windowlayout#RestoreWindows()
-
-  let &wiw = savewiw
-  let &wmw = savewmw
-  let &ei  = saveei
+  finally
+    call s:EndFunction()
+  endtry
 
   return rv
 endfunction
 
 " Restores a window layout saved with GetLayout()
 function! windowlayout#SetLayout(layout)
-  sil wincmd o
+  call s:BeginFunction()
 
-  let lzsave  = &lz
-  let eisave  = &ei
-  let sbsave  = &sb
-  let sprsave = &spr
-  let wmhsave = &wmh
-  let wmwsave = &wmw
-  let wfhsave = &wfh
-  let wfwsave = &wfw
-  let whsave  = &wh
-  let wiwsave = &wiw
-  let fdmsave = &fdm
+  try
+    sil wincmd o
 
-  set lazyredraw
-  set ei=all
-  set nosplitbelow
-  set nosplitright
-  set winminheight=0
-  set winminwidth=0
-  set winheight=1
-  set winwidth=1
-  set nowinfixheight
-  set nowinfixwidth
-  set fdm=manual
+    set nowinfixheight
+    set nowinfixwidth
 
-  " Scale() will modify the list, and we shouldn't modify layout in-place
-  let layout = deepcopy(a:layout)
+    " Scale() will modify the list, and we shouldn't modify layout in-place
+    let layout = deepcopy(a:layout)
 
-  call s:Scale(layout)
-  call s:Expand(0, layout)
-  call s:FixViews(layout)
+    " Stretch or shrink the layout if the window size has changed
+    call s:Scale(layout)
 
-  call windowlayout#SaveWindows()
-  for hookname in s:usedhooks
-    let dict = {}
-    let dict.function = s:resthooks[hookname]
-    for win in s:GetWindowsFromLayout(layout)
-      exe win.winnr . "wincmd w"
-      call dict.function(win)
+    " Extract the layout
+    call s:Expand(0, layout)
+
+    " Fix the cursor position and viewport in each window
+    " FIXME This breaks with folds...
+    call s:FixViews(layout)
+
+    for hookname in s:usedhooks
+      for win in s:GetWindowsFromLayout(layout)
+        exe win.winnr . "wincmd w"
+        call s:resthooks[hookname](win)
+      endfor
     endfor
-    unlet dict.function
-  endfor
-  call windowlayout#RestoreWindows()
-
-  let &lz  = lzsave
-  let &ei  = eisave
-  let &sb  = sbsave
-  let &spr = sprsave
-  let &wmh = wmhsave
-  let &wmw = wmhsave
-  let &wfh = wfhsave
-  let &wfw = wfwsave
-  let &wh  = whsave
-  let &wiw = wiwsave
-  let &fdm = fdmsave
+  finally
+    call s:EndFunction()
+  endtry
 endfunction
 
 " -- PRIVATE FUNCTIONS -- "
@@ -214,45 +183,84 @@ let s:savecount = 0
 let s:currwinnr = {}
 let s:prevwinnr = {}
 
-function! windowlayout#SaveWindows()
+function! s:BeginFunction()
   " Save old % and #, disable autocmds as we move the cursor between windows
   if s:savecount == 0
     let s:currwinnr[tabpagenr()] = winnr()
     wincmd p
     let s:prevwinnr[tabpagenr()] = winnr()
     wincmd p
+
+    let s:save_lz  = &lz
+    let s:save_ei  = &ei
+    let s:save_sb  = &sb
+    let s:save_spr = &spr
+    let s:save_wmh = &wmh
+    let s:save_wmw = &wmw
+    let s:save_wh  = &wh
+    let s:save_wiw = &wiw
+
+    set lazyredraw
+    set eventignore=all
+    set nosplitbelow
+    set nosplitright
+    set winminheight=0
+    set winminwidth=0
+    set winheight=1
+    set winwidth=1
   endif
   let s:savecount += 1
 endfunction
 
-function! windowlayout#RestoreWindows()
+function! s:EndFunction()
   let s:savecount -= 1
   if s:savecount == 0
     exe s:prevwinnr[tabpagenr()] . 'wincmd w'
     exe s:currwinnr[tabpagenr()] . 'wincmd w'
     unlet s:prevwinnr[tabpagenr()] s:currwinnr[tabpagenr()]
+
+    let &lz  = s:save_lz
+    let &ei  = s:save_ei
+    let &sb  = s:save_sb
+    let &spr = s:save_spr
+    let &wmh = s:save_wmh
+    let &wmw = s:save_wmw
+    let &wh  = s:save_wh
+    let &wiw = s:save_wiw
+
+    unlet s:save_lz
+    unlet s:save_ei
+    unlet s:save_sb
+    unlet s:save_spr
+    unlet s:save_wmh
+    unlet s:save_wmw
+    unlet s:save_wh
+    unlet s:save_wiw
   endif
 endfunction
 
 " Implementation for the DistanceFrom(Left|Top|Right|Bottom) functions
 " Private so that nothing unexpected can be passed for a:directionkey
 function! s:NumWindowsInDir(winnum, directionkey)
-  call windowlayout#SaveWindows()
+  call s:BeginFunction()
 
-  exe a:winnum . "wincmd w"
+  try
+    exe a:winnum . "wincmd w"
 
-  let i = 0
+    let i = 0
 
-  while 1
-    let num = winnr()
-    exe "wincmd " . a:directionkey
-    if winnr() == num
-      break
-    endif
-    let i = i + 1
-  endwhile
+    while 1
+      let num = winnr()
+      exe "wincmd " . a:directionkey
+      if winnr() == num
+        break
+      endif
+      let i = i + 1
+    endwhile
 
-  call windowlayout#RestoreWindows()
+  finally
+    call s:EndFunction()
+  endtry
 
   return i
 endfunction
@@ -260,11 +268,21 @@ endfunction
 " Implementation for the Window(Above|Below|LeftOf|RightOf) functions
 " Private so that nothing unexpected can be passed for a:directionkey
 function! s:WindowInDir(winnum, directionkey)
-  call windowlayout#SaveWindows()
-  exe a:winnum . "wincmd w"
-  exe "wincmd " . a:directionkey
-  call windowlayout#RestoreWindows()
-  return winnr()
+  call s:BeginFunction()
+
+  let rv = -1
+
+  try
+    exe a:winnum . "wincmd w"
+    exe "wincmd " . a:directionkey
+    if winnr() != a:winnum
+      let rv = winnr()
+    endif
+  finally
+    call s:EndFunction()
+  endtry
+
+  return rv
 endfunction
 
 " Implementation for the GetLayout() function
