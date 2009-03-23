@@ -42,7 +42,11 @@ function! s:MapArrowKeys()
 
   for [ letter, dir ] in items(dict)
     exe "set <" . dir . ">=\e[1;*" . letter
-    call s:MapAllModes(s:FastMap("\eO".letter) . " <" . dir . ">")
+    if v:version > 702 || v:version == 702 && has('patch073')
+      exe "set <x" . dir . ">=\eO" . letter
+    else
+      call s:MapAllModes(s:FastMap("\eO".letter) . " <" . dir . ">")
+    endif
     call s:MapAllModes(s:FastMap("\e[".letter) . " <" . dir . ">")
   endfor
 endfunction
@@ -50,7 +54,11 @@ endfunction
 function! s:MapFunctionKeys()
   for i in range(4)
     exe "set <F" . (i+1) . ">=\e[1;*" . nr2char(80+i)
-    call s:MapAllModes(s:FastMap("\eO" . nr2char(80+i)) . " <F" . (i+1) . ">")
+    if v:version > 702 || v:version == 702 && has('patch073')
+      exe "set <xF" . (i+1) . ">=\eO" . nr2char(80+i)
+    else
+      call s:MapAllModes(s:FastMap("\eO" . nr2char(80+i)) . " <F" . (i+1) . ">")
+    endif
     call s:MapAllModes(s:FastMap("\e[1" . (i+1) . "~") . " <F" . (i+1) . ">")
   endfor
 
@@ -74,10 +82,15 @@ function! s:MapOthers()
   " <Home>/<End>
   exe "set <Home>=\<Esc>[1;*H"
   exe "set <End>=\<Esc>[1;*F"
+  if v:version > 702 || v:version == 702 && has('patch073')
+    exe "set <xHome>=\e[1~"
+    exe "set <xEnd>=\e[4~"
+  else
+    call s:MapAllModes(s:FastMap("\e[1~") . " <Home>")
+    call s:MapAllModes(s:FastMap("\e[4~") . " <End>")
+  endif
   call s:MapAllModes(s:FastMap("\e[H")  . " <Home>")
   call s:MapAllModes(s:FastMap("\e[F")  . " <End>")
-  call s:MapAllModes(s:FastMap("\e[1~") . " <Home>")
-  call s:MapAllModes(s:FastMap("\e[4~") . " <End>")
 
   " <Insert>/<Del>/<PageUp>/<PageDown>
   exe "set <Insert>=\<Esc>[2;*~"
