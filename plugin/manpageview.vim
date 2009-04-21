@@ -82,7 +82,6 @@ function! s:ManPageView(topic)
   setlocal tabstop=8
   sil retab
 
-  sil 0d
   setlocal ro nomod noma bh=wipe ft=man nolist nonu nowrap bt=nofile
 endfunction
 
