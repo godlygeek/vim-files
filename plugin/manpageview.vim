@@ -1,3 +1,6 @@
+" TODO:  Is there any way to support the :tab modifier?
+"        Reuse existing windows where possible
+"        Make a map on K?
 if &cp || exists("g:loaded_manpageview")
  finish
 endif
@@ -52,12 +55,11 @@ function! s:ReadManPage(topic)
     if exists("man_keep_formatting")
       let $MAN_KEEP_FORMATTING = man_keep_formatting
     else
-      try
-        unlet $MAN_KEEP_FORMATTING
-      catch
+      sil! unlet $MAN_KEEP_FORMATTING
+      if exists("$MAN_KEEP_FORMATTING")
         " Vim can't unlet env vars; great.  Guess this is the best we can do.
         let $MAN_KEEP_FORMATTING = ''
-      endtry
+      endif
     endif
   endtry
 endfunction
