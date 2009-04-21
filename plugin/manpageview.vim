@@ -18,50 +18,35 @@ endfunction
 
 " Get result of "man | col" as a List
 function! s:ReadManPage(topic)
-  if exists('$MAN_KEEP_FORMATTING')
-    let man_keep_formatting = $MAN_KEEP_FORMATTING
+  " MAN_KEEP_FORMATTING:
+  " man-db 2.5.0 feature to disable stripping format with `col -p -b -x'.
+  " We want to strip these characters ourself if at all possible, because
+  " the bsdutils currently available on linux ships a `col' that isn't
+  " multibyte aware, and can delete half of a multibyte character when
+  " removing backspaces from the file.  Doesn't expand right, either.
+  " Note: This should have no effect on non-Linux systems.
+
+  let cmdline = 'env MAN_KEEP_FORMATTING=1 MANPAGER= PAGER= man ' . a:topic
+  let cmdline .= ' | col'
+
+  " See if 'col' accepts the '-p' switch
+  call system('col -p', 'foo')
+  if v:shell_error == 0
+    let cmdline .= ' -p'
   endif
 
-  try
-    " man-db 2.5.0 feature to disable stripping format with `col -p -b -x'.
-    " We want to strip these characters ourself if at all possible, because
-    " the bsdutils currently available on linux ships a `col' that isn't
-    " multibyte aware, and can delete half of a multibyte character when
-    " removing backspaces from the file.  Doesn't expand right, either.
-    " Note: This should have no effect on non-Linux systems.
-    let $MAN_KEEP_FORMATTING = 1
+  " Call man
+  let rv = split(system(cmdline), '\n')
 
-    let cmdline = 'man ' . a:topic . ' | col'
+  " Remove ^H ourself (col can't be trusted to do it on Linux)
+  for i in range(len(rv))
+    while rv[i] =~ '\%x08'
+      let rv[i] = substitute(rv[i], '^[[:backspace:]]*', '', '')
+      let rv[i] = substitute(rv[i], '[^[:backspace:]][[:backspace:]]', '', 'g')
+    endwhile
+  endfor
 
-    " See if 'col' accepts the '-p' switch
-    call system('col -p', 'foo')
-    if v:shell_error == 0
-      let cmdline .= ' -p'
-    endif
-
-    " Call man
-    let rv = split(system(cmdline), '\n')
-
-    " Remove ^H ourself (col can't be trusted to do it on Linux)
-    for i in range(len(rv))
-      while rv[i] =~ '\%x08'
-        let rv[i] = substitute(rv[i], '^[[:backspace:]]*', '', '')
-        let rv[i] = substitute(rv[i], '[^[:backspace:]][[:backspace:]]', '', 'g')
-      endwhile
-    endfor
-
-    return rv
-  finally
-    if exists("man_keep_formatting")
-      let $MAN_KEEP_FORMATTING = man_keep_formatting
-    else
-      sil! unlet $MAN_KEEP_FORMATTING
-      if exists("$MAN_KEEP_FORMATTING")
-        " Vim can't unlet env vars; great.  Guess this is the best we can do.
-        let $MAN_KEEP_FORMATTING = ''
-      endif
-    endif
-  endtry
+  return rv
 endfunction
 
 function! s:ManPageView(topic)
