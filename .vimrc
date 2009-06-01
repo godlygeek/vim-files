@@ -304,8 +304,7 @@ nnoremap <silent> <F12> :set hlsearch! <bar> set hlsearch?<CR>
 " Q formats paragraphs, instead of entering ex mode
 noremap Q gq
 
-endfunction
-
+nnoremap <silent> gqJ :call Exe#ExeWithOpts('norm! gqj', { 'tw' : 2147483647 })<CR>
 
 " <space> toggles folds opened and closed
 nnoremap <space> za
