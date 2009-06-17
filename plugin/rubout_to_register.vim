@@ -1,4 +1,4 @@
-" CSApprox:    Store words deleted by <C-U> or <C-W> in a register
+" Rubout:      Store words deleted by <C-U> or <C-W> in a register
 " Maintainer:  Matthew Wozniski (mjw@drexel.edu)
 " Date:        Wed, 17 Jun 2009 11:18:10 -0400
 "
