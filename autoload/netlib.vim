@@ -1,15 +1,21 @@
 " { 'protocolname' => { 'handlername' => handlerobject }}
 let s:handlers = {}
 
-function! netlib#RegisterHandler(protocol, name, handler, def_prio)
+" Register a handler for a given protocol by name.  Associate it with
+" a handler object, and a priority (the optional argument, defaulting to 50)
+function! netlib#RegisterHandler(protocol, name, handler, ...)
+  let prio = (a:0 ? a:1 : 50)
+
   if !has_key(s:handlers, a:protocol)
     let s:handlers[a:protocol] = {}
   endif
+
   let s:handlers[a:protocol][a:name] = a:handler
+
   try
     call netsettings#GetHandlerPriority(a:protocol, a:name)
   catch /^\S\+\.exception:/
-    call netsettings#SetHandlerPriority(a:protocol, a:name, a:def_prio)
+    call netsettings#SetHandlerPriority(a:protocol, a:name, prio)
   endtry
 endfunction
 
@@ -75,6 +81,7 @@ endfunction
 function! s:ReadFileIntoBuffer(file)
   let savecpo = &cpo
   try
+    " Make sure we don't change the file or altfile name...
     set cpo-=a cpo-=A cpo-=f cpo-=F
     try
       exe 'r' v:cmdarg a:file
@@ -90,6 +97,7 @@ endfunction
 function! s:WriteFileFromBuffer(file)
   let savecpo = &cpo
   try
+    " Make sure we don't change the file or altfile name...
     set cpo-=a cpo-=A cpo-=f cpo-=F
     exe line("'[") . ',' . line("']") . 'w!' v:cmdarg a:file
   finally
