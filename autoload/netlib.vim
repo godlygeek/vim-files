@@ -13,10 +13,19 @@ function! netlib#RegisterHandler(protocol, name, handler, def_prio)
   endtry
 endfunction
 
+" Needs work...
+let s:tempdir = netlib#utility#tempdir()
+
+augroup NetlibTempfileCleanup
+  au!
+  autocmd VimLeave * call netlib#utility#deltree(s:tempdir)
+augroup END
+
 " Temp file used for all handler operations.
 " Rather than returning strings to the core or taking strings as arguments
 " from the core, the handlers will read from or write to this temp file.
-let s:tempfile = tempname()
+" Default to unset. Once set, it should always be a subdirectory of s:tempdir
+let s:tempfile = ''
 
 " Split the URI 'prot://path' and return [ 'prot', 'path' ]
 " If the URI doesn't contain a :// it is invalid; throw.
@@ -100,7 +109,10 @@ endfunction
 
 " FIXME: Handle v:cmdbang
 
+" Handle ":e file" as a copy-to-local + read
 function! netlib#HandleBufRead(uri)
+  let s:tempfile = s:tempdir . 'vim_netlib_read_temp'
+
   call s:CallReadHandler(a:uri)
   call s:ReadFileIntoBuffer(s:tempfile)
   sil 1d_
@@ -108,33 +120,54 @@ function! netlib#HandleBufRead(uri)
   doautocmd BufReadPost
 endfunction
 
+" Handle ":r file" as a copy-to-local + read
 function! netlib#HandleFileRead(uri)
+  let s:tempfile = s:tempdir . 'vim_netlib_read_temp'
+
   call setpos('.', getpos("'["))
   call s:CallReadHandler(a:uri)
   call s:ReadFileIntoBuffer(s:tempfile)
 endfunction
 
+" Handle ":w file" as a write + copy-to-remote
 function! netlib#HandleBufWrite(uri)
+  let [ tempfile, uri ] = netlib#utility#calculate_src_dest(a:uri)
+  let s:tempfile = s:tempdir . tempfile
+
   call s:WriteFileFromBuffer(s:tempfile)
-  call s:CallWriteHandler(a:uri)
+  call s:CallWriteHandler(uri)
   set nomodified
 endfunction
 
+" Handle ":2,$w file" as a write + copy-to-remote
 function! netlib#HandleFileWrite(uri)
+  let [ tempfile, uri ] = netlib#utility#calculate_src_dest(a:uri)
+  let s:tempfile = s:tempdir . tempfile
+
   call s:WriteFileFromBuffer(s:tempfile)
-  call s:CallWriteHandler(a:uri)
+  call s:CallWriteHandler(uri)
   doautocmd BufWritePost
 endfunction
 
+" Handle ":w >>file" as a copy-to-local + append + copy-to-remote
 function! netlib#HandleFileAppend(uri)
+  let s:tempfile = s:tempdir . 'vim_netlib_read_temp'
+
   call s:CallReadHandler(a:uri)
   call s:AppendFileFromBuffer(s:tempfile)
-  call s:CallWriteHandler(a:uri)
+
+  let [ tempfile, uri ] = netlib#utility#calculate_src_dest(a:uri)
+  let s:tempfile = s:tempdir . tempfile
+
+  call s:CallWriteHandler(uri)
 endfunction
 
+" Handle ":source file" as a copy-to-local + source
 function! netlib#HandleSource(uri)
+  let s:tempfile = s:tempdir . 'vim_netlib_read_temp'
+
   call s:CallReadHandler(a:uri)
-  exe 'so' s:tempfile
+  exe 'source ' . s:tempfile
 endfunction
 
 
