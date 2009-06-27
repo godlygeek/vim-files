@@ -178,45 +178,105 @@ function! netlib#HandleSource(uri)
   exe 'source ' . s:tempfile
 endfunction
 
-
+" Provide a prototype for a generic handler that only wraps some shell
+" commands.  It assumes that many protocols can be adequately handled by
+" simple handlers with only 4 properties:
+"
+"   A protocol which it can speak
+"
+"   A shell command that can determine if all of the tools it requires to
+"   work are available
+"
+"   A shell command that accepts a URI on the command line and writes the
+"   contents of the file at that URI to standard output
+"
+"   A shell command that accepts a URI on the command line and writes the
+"   contents of standard input to the file at that URI
 let s:Generic_Handler = {}
 
+" If this handler's prerequisites are available, and this handler has
+" a command associated with it for reading, call
+"    read_command foo://bar/baz
+" with stdout redirected to the temp file being read.
 function! s:Generic_Handler.read(path, file) dict
-  let path = self.prot . '://' . a:path
-
-  call system(self.installed)
-
-  if v:shell_error > 0 || !len(self.read_command)
+  if empty(self.read_command)
+    " This handler cannot handle this request
     return 0
   endif
 
-  let contents = system(self.read_command . ' >' . a:file . ' ' . shellescape(a:path))
+  if !empty(self.installed)
+    call system(self.installed)
+  endif
+
   if v:shell_error > 0
+    " This handler is missing some runtime dependency
+    return 0
+  endif
+
+  let path = shellescape(self.prot . '://' . a:path)
+  let redir = netlib#utility#redir_to(a:file)
+
+  call system(self.read_command . ' ' . path . redir)
+
+  if v:shell_error > 0
+    " Something went wrong; assume no handler can handle this URI
     return -1
   endif
 
+  " Successfully operated on this URI
   return 1
 endfunction
 
+" If this handler's prerequisites are available, and this handler has
+" a command associated with it for writing, call
+"    write_command foo://bar/baz
+" with stdin redirected from the temp file being written.
 function! s:Generic_Handler.write(path, file) dict
-  let path = self.prot . '://' . a:path
-
-  call system(self.installed)
-
-  if v:shell_error > 0 || !len(self.write_command)
-    return -1
+  if empty(self.write_command)
+    " This handler cannot handle this request
+    return 0
   endif
 
-  let contents = system(self.write_command . ' >' . a:file . ' ' . shellescape(a:path))
+  if !empty(self.installed)
+    call system(self.installed)
+  endif
+
   if v:shell_error > 0
+    " This handler is missing some runtime dependency
+    return 0
+  endif
+
+  let path = shellescape(self.prot . '://' . a:path)
+  let redir = netlib#utility#redir_from(a:file)
+
+  call system(self.write_command . ' ' . path . redir)
+
+  if v:shell_error > 0
+    " Something went wrong; assume no handler can handle this URI
     return -1
   endif
+
+  " Successfully operated on this URI
+  return 1
 endfunction
 
+" Create an instance of GenericHandler that uses the given protocol, and the
+" given commands for checking if the tools it needs are installed, for
+" reading, and for writing.
+"
+" The "prot" parameter must not be an empty string.
+" If "installed" is an empty string, no check for prerequisites is performed
+" If "readcmd" is an empty string, this handler cannot read
+" If "writecmd" is an empty string, this handler cannot write
 function! netlib#GenericHandler(prot, installed, readcmd, writecmd)
+  if empty(a:prot)
+    throw "netlib.exception: No protocol provided for handler!"
+  endif
+
   let rv = copy(s:Generic_Handler)
 
-  let rv.prot          = a:prot
+  let rv.prot = substitute(a:prot, '://$', '', '')
+
   let rv.installed     = a:installed
   let rv.read_command  = a:readcmd
   let rv.write_command = a:writecmd
