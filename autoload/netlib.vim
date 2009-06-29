@@ -84,7 +84,7 @@ function! s:ReadFileIntoBuffer(file)
     " Make sure we don't change the file or altfile name...
     set cpo-=a cpo-=A cpo-=f cpo-=F
     try
-      exe 'r' v:cmdarg a:file
+      exe 'r' v:cmdarg fnameescape(a:file)
     catch /^Vim\%((\a\+)\)\=:E325/
       " The user will have already responded to this...
       " There's no reason for us to print (another) message about it.
@@ -99,7 +99,7 @@ function! s:WriteFileFromBuffer(file)
   try
     " Make sure we don't change the file or altfile name...
     set cpo-=a cpo-=A cpo-=f cpo-=F
-    exe line("'[") . ',' . line("']") . 'w!' v:cmdarg a:file
+    exe line("'[") . ',' . line("']") . 'w!' v:cmdarg fnameescape(a:file)
   finally
     let &cpo = savecpo
   endtry
@@ -109,7 +109,7 @@ function! s:AppendFileFromBuffer(file)
   let savecpo = &cpo
   try
     set cpo-=a cpo-=A cpo-=f cpo-=F
-    exe line("'[") . ',' . line("']") . 'w!' v:cmdarg '>>' a:file
+    exe line("'[") . ',' . line("']") . 'w!' v:cmdarg '>>' fnameescape(a:file)
   finally
     let &cpo = savecpo
   endtry
@@ -175,7 +175,7 @@ function! netlib#HandleSource(uri)
   let s:tempfile = s:tempdir . netlib#utility#uri_escape(a:uri)
 
   call s:CallReadHandler(a:uri)
-  exe 'source ' . s:tempfile
+  exe 'source ' . fnameescape(s:tempfile)
 endfunction
 
 " Provide a prototype for a generic handler that only wraps some shell
