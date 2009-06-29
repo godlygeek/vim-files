@@ -20,6 +20,8 @@ let s:handler = {}
 function! s:handler.read(path, file) dict
   let path = a:path
 
+  let path = substitute(path, '^localhost/', '/', '')
+
   let type = getftype(path)
 
   if type == 'dir'
