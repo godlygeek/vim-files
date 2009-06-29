@@ -119,7 +119,7 @@ endfunction
 
 " Handle ":e file" as a copy-to-local + read
 function! netlib#HandleBufRead(uri)
-  let s:tempfile = s:tempdir . 'vim_netlib_read_temp'
+  let s:tempfile = s:tempdir . netlib#utility#uri_escape(a:uri)
 
   call s:CallReadHandler(a:uri)
   call s:ReadFileIntoBuffer(s:tempfile)
@@ -130,7 +130,7 @@ endfunction
 
 " Handle ":r file" as a copy-to-local + read
 function! netlib#HandleFileRead(uri)
-  let s:tempfile = s:tempdir . 'vim_netlib_read_temp'
+  let s:tempfile = s:tempdir . netlib#utility#uri_escape(a:uri)
 
   call setpos('.', getpos("'["))
   call s:CallReadHandler(a:uri)
@@ -159,7 +159,7 @@ endfunction
 
 " Handle ":w >>file" as a copy-to-local + append + copy-to-remote
 function! netlib#HandleFileAppend(uri)
-  let s:tempfile = s:tempdir . 'vim_netlib_read_temp'
+  let s:tempfile = s:tempdir . netlib#utility#uri_escape(a:uri)
 
   call s:CallReadHandler(a:uri)
   call s:AppendFileFromBuffer(s:tempfile)
@@ -172,7 +172,7 @@ endfunction
 
 " Handle ":source file" as a copy-to-local + source
 function! netlib#HandleSource(uri)
-  let s:tempfile = s:tempdir . 'vim_netlib_read_temp'
+  let s:tempfile = s:tempdir . netlib#utility#uri_escape(a:uri)
 
   call s:CallReadHandler(a:uri)
   exe 'source ' . s:tempfile
