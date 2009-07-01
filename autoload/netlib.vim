@@ -115,12 +115,31 @@ function! s:AppendFileFromBuffer(file)
   endtry
 endfunction
 
+" Calculate and save a name for the temp file being read from the network.
+" This lets us have, for instance, identifiable names in :scriptnames after
+" sourcing a file over the network.
+function! s:SetTempfileForRead(uri)
+  let escaped = netlib#utility#uri_escape(a:uri)
+  let escaped = substitute(escaped, '\c%2f', '/', 'g')
+  let escaped = substitute(escaped, '\c%3a//', '//', '')
+  let s:tempfile = s:tempdir . escaped
+  call mkdir(fnamemodify(s:tempfile, ":h"), "p")
+endfunction
+
+" Calculate and save a name for the temp file being written to the network.
+" Since doing this properly may require changing the uri, return the uri we
+" want to be used.
+function! s:SetTempfileForWrite(uri)
+  let [ tempfile, uri ] = netlib#utility#calculate_src_dest(a:uri)
+  let s:tempfile = s:tempdir . tempfile
+  return uri
+endfunction
+
 " FIXME: Handle v:cmdbang
 
 " Handle ":e file" as a copy-to-local + read
 function! netlib#HandleBufRead(uri)
-  let s:tempfile = s:tempdir . netlib#utility#uri_escape(a:uri)
-
+  call s:SetTempfileForRead(a:uri)
   call s:CallReadHandler(a:uri)
   call s:ReadFileIntoBuffer(s:tempfile)
   sil 1d_
@@ -130,18 +149,15 @@ endfunction
 
 " Handle ":r file" as a copy-to-local + read
 function! netlib#HandleFileRead(uri)
-  let s:tempfile = s:tempdir . netlib#utility#uri_escape(a:uri)
-
   call setpos('.', getpos("'["))
+  call s:SetTempfileForRead(a:uri)
   call s:CallReadHandler(a:uri)
   call s:ReadFileIntoBuffer(s:tempfile)
 endfunction
 
 " Handle ":w file" as a write + copy-to-remote
 function! netlib#HandleBufWrite(uri)
-  let [ tempfile, uri ] = netlib#utility#calculate_src_dest(a:uri)
-  let s:tempfile = s:tempdir . tempfile
-
+  let uri = s:SetTempfileForWrite(a:uri)
   call s:WriteFileFromBuffer(s:tempfile)
   call s:CallWriteHandler(uri)
   set nomodified
@@ -149,9 +165,7 @@ endfunction
 
 " Handle ":2,$w file" as a write + copy-to-remote
 function! netlib#HandleFileWrite(uri)
-  let [ tempfile, uri ] = netlib#utility#calculate_src_dest(a:uri)
-  let s:tempfile = s:tempdir . tempfile
-
+  let uri = s:SetTempfileForWrite(a:uri)
   call s:WriteFileFromBuffer(s:tempfile)
   call s:CallWriteHandler(uri)
   doautocmd BufWritePost
@@ -159,21 +173,16 @@ endfunction
 
 " Handle ":w >>file" as a copy-to-local + append + copy-to-remote
 function! netlib#HandleFileAppend(uri)
-  let s:tempfile = s:tempdir . netlib#utility#uri_escape(a:uri)
-
+  call s:SetTempfileForRead(a:uri)
   call s:CallReadHandler(a:uri)
   call s:AppendFileFromBuffer(s:tempfile)
-
-  let [ tempfile, uri ] = netlib#utility#calculate_src_dest(a:uri)
-  let s:tempfile = s:tempdir . tempfile
-
+  let uri = s:SetTempfileForWrite(a:uri)
   call s:CallWriteHandler(uri)
 endfunction
 
 " Handle ":source file" as a copy-to-local + source
 function! netlib#HandleSource(uri)
-  let s:tempfile = s:tempdir . netlib#utility#uri_escape(a:uri)
-
+  call s:SetTempfileForRead(a:uri)
   call s:CallReadHandler(a:uri)
   exe 'source ' . fnameescape(s:tempfile)
 endfunction

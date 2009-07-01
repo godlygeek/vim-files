@@ -84,6 +84,7 @@ function! netlib#utility#calculate_src_dest(uri)
   return [ filename, prot . '://' . path ]
 endfunction
 
+" Escape a URI to a valid filename, with %-escaped characters.
 function! netlib#utility#uri_escape(uri)
   return substitute(a:uri, '[^A-Za-z0-9.~_-]',
                   \ '\="%" . printf("%02x", char2nr(submatch(0)))', 'g')
