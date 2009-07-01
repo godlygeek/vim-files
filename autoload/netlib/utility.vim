@@ -88,3 +88,42 @@ function! netlib#utility#uri_escape(uri)
   return substitute(a:uri, '[^A-Za-z0-9.~_-]',
                   \ '\="%" . printf("%02x", char2nr(submatch(0)))', 'g')
 endfunction
+
+" Parse some URI like "[[userX]host[Yport]Z]path" into separate user, host,
+" port, and path components.  X Y and Z are separators; they must be valid
+" regexes that match exactly the separator.  Each will be evaluated with the
+" default magic-ness (that is, \m).
+function! netlib#utility#uri_split(uri, x, y, z)
+  let rv = {}
+
+  let x = '%(\m' . a:x . '\v)'
+  let y = '%(\m' . a:y . '\v)'
+  let z = '%(\m' . a:z . '\v)'
+
+  let not_xyz = printf('%%(.%%(%s|%s|%s)@<!)', x, y, z)
+
+  let userre = '(' . not_xyz . '+)%(' . x . ')'
+  let hostre = '(' . not_xyz . '+)'
+  let portre = '%(' . y . ')(\d+)'
+
+  let re = printf('\v%%(%%(%s)=%%(%s)%%(%s)=%%(%s))=(.*)', userre, hostre, portre, z)
+
+  let list = matchlist(a:uri, re)
+
+  if empty(list)
+    throw "netlib.exception: Cannot split URI"
+  endif
+
+  if len(list[1])
+    let rv['user'] = list[1]
+  endif
+  if len(list[2])
+    let rv['host'] = list[2]
+  endif
+  if len(list[3])
+    let rv['port'] = list[3]
+  endif
+  let rv['path'] = list[4]
+
+  return rv
+endfunction

@@ -43,32 +43,6 @@ let s:openscp_prio = 90
 
 " ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ "
 
-" Parse the three valid path formats.
-" /path/to/file
-" [user@]host[#port]:path/to/file
-" [user@]host[#port]/path/to/file
-"
-" TODO: Can this be made generic and moved into netlib#Something() ?
-function! s:ParsePath(path)
-  let rv = {}
-  if a:path[0] ==# '/'
-    let rv['path'] = a:path
-  else
-    let list = matchlist(a:path, '^\%(\([^@]\+\)@\)\=\([^#:/]\+\)\%(#\(\d\+\)\)\=[:/]\(.*\)$')
-    if len(list) != 0
-      if len(list[1])
-        let rv['user'] = list[1]
-      endif
-      let rv['host'] = list[2]
-      if len(list[3])
-        let rv['port'] = list[3]
-      endif
-      let rv['path'] = list[4]
-    endif
-  endif
-  return rv
-endfunction
-
 function! s:FoldPrefix(options, prefix)
   let pfxlen = len(a:prefix)
   if pfxlen
@@ -82,7 +56,8 @@ function! s:FoldPrefix(options, prefix)
 endfunction
 
 function! s:ChoosePathAndOptions(path)
-  let parsed_path = s:ParsePath(a:path)
+  " Format is [[user@]host[:port](:|/)]path
+  let parsed_path = netlib#utility#uri_split(a:path, '@', ':', '[:/]')
 
   if has_key(parsed_path, 'host')
     let options = netsettings#GetAliasOptions(parsed_path['host'])
