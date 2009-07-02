@@ -119,12 +119,8 @@ function! s:FindOptions(path)
   return options
 endfunction
 
-function! s:sftp(input, opts)
+function! s:get_sftp_cmdline(opts)
   let cmd = get(a:opts, 'sftp_progname', 'sftp')
-
-  if !executable(cmd)
-    return -1
-  endif
 
   sil! let cmd .= ' -oPort=' . shellescape(a:opts['port'])
   sil! let cmd .= a:opts['force_proto'] == 1 ? shellescape(' -1') : ''
@@ -144,41 +140,94 @@ function! s:sftp(input, opts)
   sil! let cmd .= ' -S /home/matt/ssh-sanitize.sh'
   sil! let cmd .= ' ' . shellescape(a:opts['host'])
 
-  echo cmd
+  return cmd
+endfunction
+
+let s:handler = {}
+
+function! s:handler.read(path, file) dict
+  let opts = s:FindOptions(a:path)
+
+  if !executable(get(opts, 'sftp_progname', 'sftp'))
+    return 0
+  endif
+
+  " Marker for beginning of output
+  let input = [ '- - - - -' ]
+  let input += [ '-ls -1al "' . opts['path'] . '"' ]
+  let input += [ 'get -P "' . opts['path'] . '" "' . a:file . '"' ]
+
+  let cmdline = s:get_sftp_cmdline(opts)
+
+  echo cmdline
+
+  let output = system(cmdline, join(input + [], "\n"))
+
+  if v:shell_error
+    let lines = split(output, '\r\=\n')
+
+    while lines[0] !~# '^sftp> - - - - -$'
+      call remove(lines, 0)
+    endwhile
+
+    call remove(lines, 0, 2)
+
+    let listing = []
+
+    let chars_to_remove = -1
+
+    while lines[0] =~# '^[-bcCdDlMnpPs?][r-][w-][sStTx-][r-][w-][sStTx-][r-][w-][sStTx-]\S\=\s*\d'
+      let line = remove(lines, 0)
+
+      if line =~# '^d' && line !~ '/$'
+        let line .= '/'
+      endif
+
+      if chars_to_remove == -1 && line =~ '\s\./$'
+        let chars_to_remove = strlen(substitute(line, '.', 'x', 'g')) - 2
+      endif
+
+      let line = substitute(line, '^.\{' . chars_to_remove . '}', '', '')
+
+      let listing += [ 'sftp://' . a:path . '/' . line ]
+    endwhile
+
+    if empty(listing)
+      return -1
+    endif
+
+    call writefile(listing, a:file)
+
+    return 2
+  endif
+
+  return 1
+endfunction
+
+function! s:handler.write(path, file) dict
+  let opts = s:FindOptions(a:path)
+
+  if !executable(get(opts, 'sftp_progname', 'sftp'))
+    return 0
+  endif
+
+  let input  = [ '-rm "'  . opts['path'] . '"']
+  let input += [ 'ln . "' . opts['path'] . '"']
+  let input += [ 'rm "'   . opts['path'] . '"']
+  let input += [ 'put "'  . a:file       . '" "' . opts['path'] . '"' ]
+
+  let cmdline = s:get_sftp_cmdline(opts)
+
+  echo cmdline
   echon "\n"
-  echo system(cmd, join(a:input + [], "\n"))
+
+  echomsg system(cmdline, join(input + [], "\n"))
 
   if v:shell_error
     return -1
   endif
 
   return 1
-endfunction
-
-let s:handler = {}
-
-function! s:handler.read(path, file) dict
-  try
-    let opts = s:FindOptions(a:path)
-    echomsg string(opts)
-    let input = [ 'get -P "' . opts['path'] . '" "' . a:file . '"' ]
-    return s:sftp(input, opts)
-  catch
-    return 0
-  endtry
-endfunction
-
-function! s:handler.write(path, file) dict
-  try
-    let opts = s:FindOptions(a:path)
-    let input  = [ '-rm "'  . opts['path'] . '"']
-    let input += [ 'ln . "' . opts['path'] . '"']
-    let input += [ 'rm "'   . opts['path'] . '"']
-    let input += [ 'put "'  . a:file       . '" "' . opts['path'] . '"' ]
-    return s:sftp(input, opts)
-  catch
-    return 0
-  endtry
 endfunction
 
 call netlib#RegisterHandler('sftp', 'opensftp', s:handler, s:opensftp_prio)
