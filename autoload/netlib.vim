@@ -116,14 +116,20 @@ function! s:AppendFileFromBuffer(file)
 endfunction
 
 " Calculate and save a name for the temp file being read from the network.
+" Will be used for every read, except for those caused by :source
+function! s:SetTempfileForRead(uri)
+  let s:tempfile = s:tempdir . '/read_temp'
+endfunction
+
+" Calculate and save a name for the temp file being read from the network.
 " This lets us have, for instance, identifiable names in :scriptnames after
 " sourcing a file over the network.
-function! s:SetTempfileForRead(uri)
+function! s:SetTempfileForSource(uri)
   let escaped = netlib#utility#uri_escape(a:uri)
   let escaped = substitute(escaped, '\c%2f', '/', 'g')
   let escaped = substitute(escaped, '\c%3a//', '//', '')
   let s:tempfile = s:tempdir . escaped
-  call mkdir(fnamemodify(s:tempfile, ":h"), "p")
+  sil! call mkdir(fnamemodify(s:tempfile, ":h"), "p")
 endfunction
 
 " Calculate and save a name for the temp file being written to the network.
@@ -182,7 +188,7 @@ endfunction
 
 " Handle ":source file" as a copy-to-local + source
 function! netlib#HandleSource(uri)
-  call s:SetTempfileForRead(a:uri)
+  call s:SetTempfileForSource(a:uri)
   call s:CallReadHandler(a:uri)
   exe 'source ' . fnameescape(s:tempfile)
 endfunction
