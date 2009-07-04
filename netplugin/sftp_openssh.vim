@@ -205,7 +205,8 @@ function! s:handler.read(path, file) dict
 endfunction
 
 function! s:handler.write(path, file) dict
-  let opts = s:FindOptions(a:path)
+  let path = netlib#utility#get_directory_path(a:path, a:file)
+  let opts = s:FindOptions(path)
 
   if !executable(get(opts, 'sftp_progname', 'sftp'))
     return 0

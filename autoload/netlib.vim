@@ -115,30 +115,31 @@ function! s:AppendFileFromBuffer(file)
   endtry
 endfunction
 
-" Calculate and save a name for the temp file being read from the network.
-" Will be used for every read, except for those caused by :source
-function! s:SetTempfileForRead(uri)
-  let s:tempfile = s:tempdir . '/read_temp'
-endfunction
+function! s:SetTempfile(uri)
+  if g:netlib_operation ==# 'source'
+    " Need an identifiable name for display in :scriptnames
+    let name = netlib#utility#uri_escape(a:uri)
+    let name = substitute(name, '\c%2f', '/', 'g')
+    let name = substitute(name, '\c%3a//', '//', '')
+  elseif g:netlib_operation ==# 'read'
+    " Any name should do just fine
+    let name = 'read_temp'
+  else
+    " Want to use the last component of the path part of the URI so that
+    " writing to "scp://user@host:bar" does "scp bar user@host:"
+    let name = matchstr(a:uri,
+                      \ '^.\{-}://[^:/]*\(:\d\+/\|[:/]\)\([^/]*/\)*\zs.*')
+    if empty(name)
+      let name = 'write_temp'
+    endif
+  endif
 
-" Calculate and save a name for the temp file being read from the network.
-" This lets us have, for instance, identifiable names in :scriptnames after
-" sourcing a file over the network.
-function! s:SetTempfileForSource(uri)
-  let escaped = netlib#utility#uri_escape(a:uri)
-  let escaped = substitute(escaped, '\c%2f', '/', 'g')
-  let escaped = substitute(escaped, '\c%3a//', '//', '')
-  let s:tempfile = s:tempdir . escaped
+  let s:tempfile = s:tempdir . name
+
   sil! call mkdir(fnamemodify(s:tempfile, ":h"), "p")
-endfunction
-
-" Calculate and save a name for the temp file being written to the network.
-" Since doing this properly may require changing the uri, return the uri we
-" want to be used.
-function! s:SetTempfileForWrite(uri)
-  let [ tempfile, uri ] = netlib#utility#calculate_src_dest(a:uri)
-  let s:tempfile = s:tempdir . tempfile
-  return uri
+  if !isdirectory(fnamemodify(s:tempfile, ":h"))
+    throw "netlib.exception: cannot create temp directory!"
+  endif
 endfunction
 
 " FIXME: Handle v:cmdbang
@@ -147,7 +148,7 @@ endfunction
 function! netlib#HandleBufRead(uri)
   let g:netlib_operation = 'read'
   try
-    call s:SetTempfileForRead(a:uri)
+    call s:SetTempfile(a:uri)
     call s:CallReadHandler(a:uri)
     call s:ReadFileIntoBuffer(s:tempfile)
     sil 1d_
@@ -163,7 +164,7 @@ function! netlib#HandleFileRead(uri)
   let g:netlib_operation = 'read'
   try
     call setpos('.', getpos("'["))
-    call s:SetTempfileForRead(a:uri)
+    call s:SetTempfile(a:uri)
     call s:CallReadHandler(a:uri)
     call s:ReadFileIntoBuffer(s:tempfile)
   finally
@@ -175,9 +176,9 @@ endfunction
 function! netlib#HandleBufWrite(uri)
   let g:netlib_operation = 'write'
   try
-    let uri = s:SetTempfileForWrite(a:uri)
+    call s:SetTempfile(a:uri)
     call s:WriteFileFromBuffer(s:tempfile)
-    call s:CallWriteHandler(uri)
+    call s:CallWriteHandler(a:uri)
     set nomodified
   finally
     unlet g:netlib_operation
@@ -188,9 +189,9 @@ endfunction
 function! netlib#HandleFileWrite(uri)
   let g:netlib_operation = 'write'
   try
-    let uri = s:SetTempfileForWrite(a:uri)
+    call s:SetTempfile(a:uri)
     call s:WriteFileFromBuffer(s:tempfile)
-    call s:CallWriteHandler(uri)
+    call s:CallWriteHandler(a:uri)
     doautocmd BufWritePost
   finally
     unlet g:netlib_operation
@@ -201,11 +202,11 @@ endfunction
 function! netlib#HandleFileAppend(uri)
   let g:netlib_operation = 'append'
   try
-    call s:SetTempfileForRead(a:uri)
+    call s:SetTempfile(a:uri)
     call s:CallReadHandler(a:uri)
     call s:AppendFileFromBuffer(s:tempfile)
-    let uri = s:SetTempfileForWrite(a:uri)
-    call s:CallWriteHandler(uri)
+    call s:SetTempfile(a:uri)
+    call s:CallWriteHandler(a:uri)
   finally
     unlet g:netlib_operation
   endtry
@@ -215,7 +216,7 @@ endfunction
 function! netlib#HandleSource(uri)
   let g:netlib_operation = 'source'
   try
-    call s:SetTempfileForSource(a:uri)
+    call s:SetTempfile(a:uri)
     call s:CallReadHandler(a:uri)
     exe 'source ' . fnameescape(s:tempfile)
   finally

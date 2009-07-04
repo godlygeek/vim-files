@@ -163,7 +163,8 @@ function! s:handler.read(path, file) dict
 endfunction
 
 function! s:handler.write(path, file) dict
-  let [ path, opts ] = s:ChoosePathAndOptions(a:path)
+  let path = netlib#utility#get_directory_path(a:path, a:file)
+  let [ path, opts ] = s:ChoosePathAndOptions(path)
   return s:scp(a:file, path, opts)
 endfunction
 

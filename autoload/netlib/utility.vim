@@ -41,53 +41,43 @@ endfunction
 " any arbitrary temp file name since, eg, "scp /tmp/v12345/0 host:bar" could
 " clobber the file "bar/0" on the remote instead of nicely failing.
 "
-" Remedy this by calculating appropriate strings to use as both the source and
-" destination.
+" Remedy this by ensuring that the tempfile name used matches the filename
+" component of the URI given, and then removing that portion from the URI so
+" that the URI names a directory (complete with trailing directory separator).
 "
-" If the file already has a name,
-"   use that name as the source name, and don't change the URI.
-"   ( for instance, ":w scp:///tmp" in buffer "foo" becomes "scp foo /tmp" )
+" "w scp://foo/bar/baz" -> "scp baz foo:bar/"
+"   If "bar" exists and is a directory, this creates "bar/baz", otherwise this
+"   is an error.
 "
-" If the path ends with a directory separator,
-"   abort; the user explicitly tried to write an unnamed buffer as a folder.
-"   ( ":w scp:///tmp/" in an unnamed buffer; no filename provided )
-"
-" Otherwise,
-"   use the last non-directory-separator part of the path as the source name,
-"   and remove that name from the end of the URI
-"   ( ":w scp://host:test" becomes "scp test host:" )
-"   ( ":w scp:///tmp/test/foo" becomes "scp foo /tmp/test/")
-function! netlib#utility#calculate_src_dest(uri)
-  let uri = a:uri
+" NOTE: This method assumes that "path" is the entire portion of a URI
+"       following the "protocol://" prefix.  It must be of the form
+"       [[user@]host[:port](:|/)]path
+function! netlib#utility#get_directory_path(path, file)
+  let parsed_path = netlib#utility#uri_split(a:path, '@', ':', '[:/]')
 
-  if expand('%') !=# uri && strlen(expand('%'))
-    " File has an actual name; use it.
-    return [ expand('%:t'), a:uri ]
+  if parsed_path.path =~ '/$'
+    throw "netlib.exception: Cannot write to a directory!"
   endif
 
-  try
-    let [ prot, uri ] = split(uri, '://', 1)
-  catch
-    throw "netlib.exception: invalid URI"
-  endtry
-
-  " Path portion of URI begins after first : or /
-  let path = matchstr(uri, '^[^:/]*[:/]\zs.*')
-  let uri = matchstr(uri, '^[^:/]*[:/]')
-
-  if path[-1] =~ '[/\\]' || empty(path)
-    " URI ends with directory separator or
-    " no path is specified
-    throw "netlib.exception: No filename given in URI"
+  if fnamemodify(parsed_path.path, ':t') !=# fnamemodify(a:file, ':t')
+    throw "netlib.exception: Suffix doesn't match tempfile!"
   endif
 
-  " Last contiguous chunk of non-directory separators
-  let filename = matchstr(path, '[^/\\]*$')
+  let parsed_path.path = substitute(parsed_path.path, '[^/]*$', '', '')
 
-  " Everything but the filename
-  let path = substitute(path, '[^/\\]*$', '', '')
+  let path = ''
+  if has_key(parsed_path, 'user')
+    let path .= parsed_path.user . '@'
+  endif
+  if has_key(parsed_path, 'host')
+    let path .= parsed_path.host
+  endif
+  if has_key(parsed_path, 'port')
+    let path .= ':' . parsed_path.port
+  endif
+  let path .= '/' . parsed_path.path
 
-  return [ filename, prot . '://' . uri . path ]
+  return path
 endfunction
 
 " Escape a URI to a valid filename, with %-escaped characters.
