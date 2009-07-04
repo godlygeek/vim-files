@@ -145,52 +145,82 @@ endfunction
 
 " Handle ":e file" as a copy-to-local + read
 function! netlib#HandleBufRead(uri)
-  call s:SetTempfileForRead(a:uri)
-  call s:CallReadHandler(a:uri)
-  call s:ReadFileIntoBuffer(s:tempfile)
-  sil 1d_
-  call setpos("']", [ 0, line('$'), 1, 0 ])
-  doautocmd BufReadPost
+  let g:netlib_operation = 'read'
+  try
+    call s:SetTempfileForRead(a:uri)
+    call s:CallReadHandler(a:uri)
+    call s:ReadFileIntoBuffer(s:tempfile)
+    sil 1d_
+    call setpos("']", [ 0, line('$'), 1, 0 ])
+    doautocmd BufReadPost
+  finally
+    unlet g:netlib_operation
+  endtry
 endfunction
 
 " Handle ":r file" as a copy-to-local + read
 function! netlib#HandleFileRead(uri)
-  call setpos('.', getpos("'["))
-  call s:SetTempfileForRead(a:uri)
-  call s:CallReadHandler(a:uri)
-  call s:ReadFileIntoBuffer(s:tempfile)
+  let g:netlib_operation = 'read'
+  try
+    call setpos('.', getpos("'["))
+    call s:SetTempfileForRead(a:uri)
+    call s:CallReadHandler(a:uri)
+    call s:ReadFileIntoBuffer(s:tempfile)
+  finally
+    unlet g:netlib_operation
+  endtry
 endfunction
 
 " Handle ":w file" as a write + copy-to-remote
 function! netlib#HandleBufWrite(uri)
-  let uri = s:SetTempfileForWrite(a:uri)
-  call s:WriteFileFromBuffer(s:tempfile)
-  call s:CallWriteHandler(uri)
-  set nomodified
+  let g:netlib_operation = 'write'
+  try
+    let uri = s:SetTempfileForWrite(a:uri)
+    call s:WriteFileFromBuffer(s:tempfile)
+    call s:CallWriteHandler(uri)
+    set nomodified
+  finally
+    unlet g:netlib_operation
+  endtry
 endfunction
 
 " Handle ":2,$w file" as a write + copy-to-remote
 function! netlib#HandleFileWrite(uri)
-  let uri = s:SetTempfileForWrite(a:uri)
-  call s:WriteFileFromBuffer(s:tempfile)
-  call s:CallWriteHandler(uri)
-  doautocmd BufWritePost
+  let g:netlib_operation = 'write'
+  try
+    let uri = s:SetTempfileForWrite(a:uri)
+    call s:WriteFileFromBuffer(s:tempfile)
+    call s:CallWriteHandler(uri)
+    doautocmd BufWritePost
+  finally
+    unlet g:netlib_operation
+  endtry
 endfunction
 
 " Handle ":w >>file" as a copy-to-local + append + copy-to-remote
 function! netlib#HandleFileAppend(uri)
-  call s:SetTempfileForRead(a:uri)
-  call s:CallReadHandler(a:uri)
-  call s:AppendFileFromBuffer(s:tempfile)
-  let uri = s:SetTempfileForWrite(a:uri)
-  call s:CallWriteHandler(uri)
+  let g:netlib_operation = 'append'
+  try
+    call s:SetTempfileForRead(a:uri)
+    call s:CallReadHandler(a:uri)
+    call s:AppendFileFromBuffer(s:tempfile)
+    let uri = s:SetTempfileForWrite(a:uri)
+    call s:CallWriteHandler(uri)
+  finally
+    unlet g:netlib_operation
+  endtry
 endfunction
 
 " Handle ":source file" as a copy-to-local + source
 function! netlib#HandleSource(uri)
-  call s:SetTempfileForSource(a:uri)
-  call s:CallReadHandler(a:uri)
-  exe 'source ' . fnameescape(s:tempfile)
+  let g:netlib_operation = 'source'
+  try
+    call s:SetTempfileForSource(a:uri)
+    call s:CallReadHandler(a:uri)
+    exe 'source ' . fnameescape(s:tempfile)
+  finally
+    unlet g:netlib_operation
+  endtry
 endfunction
 
 " Provide a prototype for a generic handler that only wraps some shell
@@ -199,8 +229,8 @@ endfunction
 "
 "   A protocol which it can speak
 "
-"   A shell command that can determine if all of the tools it requires to
-"   work are available
+"   A vimscript expession that can determine if all of the tools it requires
+"   to work are available
 "
 "   A shell command that accepts a URI on the command line and writes the
 "   contents of the file at that URI to standard output
@@ -219,11 +249,7 @@ function! s:Generic_Handler.read(path, file) dict
     return 0
   endif
 
-  if !empty(self.installed)
-    call system(self.installed)
-  endif
-
-  if v:shell_error > 0
+  if !empty(self.installed) && !eval(self.installed)
     " This handler is missing some runtime dependency
     return 0
   endif
@@ -231,6 +257,7 @@ function! s:Generic_Handler.read(path, file) dict
   let path = shellescape(self.prot . '://' . a:path)
   let redir = netlib#utility#redir_to(a:file)
 
+  echo self.read_command . ' ' . path . redir
   call system(self.read_command . ' ' . path . redir)
 
   if v:shell_error > 0
@@ -252,11 +279,7 @@ function! s:Generic_Handler.write(path, file) dict
     return 0
   endif
 
-  if !empty(self.installed)
-    call system(self.installed)
-  endif
-
-  if v:shell_error > 0
+  if !empty(self.installed) && !eval(self.installed)
     " This handler is missing some runtime dependency
     return 0
   endif
@@ -264,6 +287,7 @@ function! s:Generic_Handler.write(path, file) dict
   let path = shellescape(self.prot . '://' . a:path)
   let redir = netlib#utility#redir_from(a:file)
 
+  echo self.write_command . ' ' . path . redir
   call system(self.write_command . ' ' . path . redir)
 
   if v:shell_error > 0
