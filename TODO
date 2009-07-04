@@ -1,2 +1,3 @@
+add support for ftp, rcp, fetch
 test suite
 work out redraw bugs, particularly with sudo://
