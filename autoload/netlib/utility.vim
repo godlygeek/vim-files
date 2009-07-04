@@ -21,10 +21,12 @@ endfunction
 
 " Interpolate a file name into 'shellredir'
 function! netlib#utility#redir_to(name)
-  if &shellredir =~ '%s'
-    return substitute(&shellredir, '%s', a:name, 'g')
-  endif
-  return &shellredir . a:name
+  " We don't want stderr included!
+  return '>' . a:name
+  "if &shellredir =~ '%s'
+  "  return substitute(&shellredir, '%s', a:name, 'g')
+  "endif
+  "return &shellredir . a:name
 endfunction
 
 " Provided for symmetry with redir_to, but for input redirection
