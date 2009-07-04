@@ -48,12 +48,12 @@ endfunction
 "   use that name as the source name, and don't change the URI.
 "   ( for instance, ":w scp:///tmp" in buffer "foo" becomes "scp foo /tmp" )
 "
-" If the URI ends with a directory separator,
+" If the path ends with a directory separator,
 "   abort; the user explicitly tried to write an unnamed buffer as a folder.
 "   ( ":w scp:///tmp/" in an unnamed buffer; no filename provided )
 "
 " Otherwise,
-"   use the last non-directory-separator part of the URI as the source name,
+"   use the last non-directory-separator part of the path as the source name,
 "   and remove that name from the end of the URI
 "   ( ":w scp://host:test" becomes "scp test host:" )
 "   ( ":w scp:///tmp/test/foo" becomes "scp foo /tmp/test/")
@@ -65,17 +65,21 @@ function! netlib#utility#calculate_src_dest(uri)
     return [ expand('%:t'), a:uri ]
   endif
 
-  if uri[-1] =~ '[/\\]'
-    " URI ends with directory separator
-    throw "netlib.exception: No filename given"
-  endif
-
-  " Unnamed buffer (% == ''), or first time saving (% == uri)
   try
-    let [ prot, path ] = split(uri, '://', 1)
+    let [ prot, uri ] = split(uri, '://', 1)
   catch
     throw "netlib.exception: invalid URI"
   endtry
+
+  " Path portion of URI begins after first : or /
+  let path = matchstr(uri, '^[^:/]*[:/]\zs.*')
+  let uri = matchstr(uri, '^[^:/]*[:/]')
+
+  if path[-1] =~ '[/\\]' || empty(path)
+    " URI ends with directory separator or
+    " no path is specified
+    throw "netlib.exception: No filename given in URI"
+  endif
 
   " Last contiguous chunk of non-directory separators
   let filename = matchstr(path, '[^/\\]*$')
@@ -83,7 +87,7 @@ function! netlib#utility#calculate_src_dest(uri)
   " Everything but the filename
   let path = substitute(path, '[^/\\]*$', '', '')
 
-  return [ filename, prot . '://' . path ]
+  return [ filename, prot . '://' . uri . path ]
 endfunction
 
 " Escape a URI to a valid filename, with %-escaped characters.
