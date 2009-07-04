@@ -22,9 +22,7 @@ function! s:handler.read(path, file) dict
 
   let path = substitute(path, '^localhost/', '/', '')
 
-  let type = getftype(path)
-
-  if type == 'dir'
+  if getftype(path . '/') ==# 'dir'
     if path[-1] != '/'
       let path .= '/'
     endif
@@ -42,9 +40,8 @@ function! s:handler.read(path, file) dict
 endfunction
 
 function! s:handler.write(path, file) dict
-  let type = getftype(a:path)
-
-  if type ==# 'dir'
+  " Handle both dirs and links to dirs
+  if getftype(type) ==# 'dir' || getftype(type . '/') ==# 'dir'
     return -1
   endif
 
