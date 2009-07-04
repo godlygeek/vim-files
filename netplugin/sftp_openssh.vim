@@ -136,8 +136,6 @@ function! s:get_sftp_cmdline(opts)
 
   "sil let cmd .= ' ' . shellescape(a:src) . ' ' . shellescape(a:dest)
 
-  sil! let cmd .= ' -b -'
-  sil! let cmd .= ' -S /home/matt/ssh-sanitize.sh'
   sil! let cmd .= ' ' . shellescape(a:opts['host'])
 
   return cmd
@@ -154,16 +152,18 @@ function! s:handler.read(path, file) dict
 
   " Marker for beginning of output
   let input = [ '- - - - -' ]
-  let input += [ '-ls -1al "' . opts['path'] . '"' ]
+  let input += [ 'ls -1al "' . opts['path'] . '"' ]
   let input += [ 'get -P "' . opts['path'] . '" "' . a:file . '"' ]
 
   let cmdline = s:get_sftp_cmdline(opts)
 
   echo cmdline
 
+  sil! call delete(a:file)
+
   let output = system(cmdline, join(input + [], "\n"))
 
-  if v:shell_error
+  if !filereadable(a:file)
     let lines = split(output, '\r\=\n')
 
     while lines[0] !~# '^sftp> - - - - -$'
@@ -211,19 +211,17 @@ function! s:handler.write(path, file) dict
     return 0
   endif
 
-  let input  = [ '-rm "'  . opts['path'] . '"']
-  let input += [ 'ln . "' . opts['path'] . '"']
-  let input += [ 'rm "'   . opts['path'] . '"']
-  let input += [ 'put "'  . a:file       . '" "' . opts['path'] . '"' ]
+  let input = [ 'put "' . a:file . '" "' . opts['path'] . '"' ]
 
   let cmdline = s:get_sftp_cmdline(opts)
 
   echo cmdline
   echon "\n"
 
-  echomsg system(cmdline, join(input + [], "\n"))
+  let output = system(cmdline, join(input + [], "\n"))
 
-  if v:shell_error
+  " This may just be an implementation detail, but it works...
+  if output =~ "\r\n$"
     return -1
   endif
 
