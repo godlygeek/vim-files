@@ -74,19 +74,30 @@ endfunction
 " Multiple handlers may be tried if the highest priority handler returns
 " netlib#handler_error().
 function! s:Handle(uri, funcname)
-  let [ prot, path ] = s:ValidateUri(a:uri)
-  let handlers = netsettings#HandlerList(prot)
-  for name in handlers
-    let rv = call(s:handlers[prot][name][a:funcname], [ path, s:tempfile ], s:handlers[prot][name])
-    if rv == 1 || rv == 2
-      return
-    elseif rv == -1
-      throw "netlib.exception: FIXME something went wrong"
-    elseif rv == 0
-      continue " Handler error, try another one
+  if &shellredir == '>&' || &shellredir == '>%s 2>&1'
+    let save_shellredir = &shellredir
+    set shellredir=>
+  endif
+
+  try
+    let [ prot, path ] = s:ValidateUri(a:uri)
+    let handlers = netsettings#HandlerList(prot)
+    for name in handlers
+      let rv = call(s:handlers[prot][name][a:funcname], [ path, s:tempfile ], s:handlers[prot][name])
+      if rv == 1 || rv == 2
+        return
+      elseif rv == -1
+        throw "netlib.exception: FIXME something went wrong"
+      elseif rv == 0
+        continue " Handler error, try another one
+      endif
+    endfor
+    throw "netlib.exception: no suitable handler exists"
+  finally
+    if exists('save_shellredir')
+      let &shellredir = save_shellredir
     endif
-  endfor
-  throw "netlib.exception: no suitable handler exists"
+  endtry
 endfunction
 
 function! s:CallReadHandler(uri)
