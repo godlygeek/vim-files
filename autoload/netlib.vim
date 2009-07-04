@@ -43,17 +43,36 @@ function! s:ValidateUri(uri)
   return [ parts[0], join(parts[1:], '://') ]
 endfunction
 
+" Return value for a handler encountering an invalid URI; fatal error.
+function! netlib#uri_error()
+  return -1
+endfunction
+
+" Return value for a handler that is misconfigured or unable to function.
+" Another handler will be tried when this value is returned.
+function! netlib#handler_error()
+  return 0
+endfunction
+
+" Return value for a handler that has successfully written a file.
+function! netlib#file_written()
+  return 1
+endfunction
+
+" Return value for a handler that has successfully read a file.
+function! netlib#file_read()
+  return 1
+endfunction
+
+" Return value for a handler that has successfully read a directory listing.
+function! netlib#directory_read()
+  return 2
+endfunction
+
 " Given a URI and a handler function name, try to find a handler for the
 " protocol associated with that URI and call the handler function on the path.
-"
-" If the handler returns 0, that handler is not equipped to handle the URI.
-"   Another will be tried.
-" If the handler returns -1, that URI is not able to have the given function
-"   performed upon it.  Consider this a fatal error for this request.
-" If the handler returns 1, the path corresponded to a file which was read or
-"   written successfully.
-" If the handler returns 2, the path corresponded to a directory whose
-"   contents were listed successfully.
+" Multiple handlers may be tried if the highest priority handler returns
+" netlib#handler_error().
 function! s:Handle(uri, funcname)
   let [ prot, path ] = s:ValidateUri(a:uri)
   let handlers = netsettings#HandlerList(prot)
