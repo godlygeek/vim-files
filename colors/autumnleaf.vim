@@ -18,23 +18,23 @@ let colors_name="autumnleaf"
 " Colors for the User Interface.
 
 hi Cursor	guibg=#aa7733   guifg=#ffeebb   gui=bold
-hi Normal	guibg=#fffdfa	guifg=black	gui=none
+hi Normal	guibg=#fffdfa	guifg=#000000	gui=none
 hi NonText	guibg=#eafaea   guifg=#000099   gui=bold
-hi Visual	guibg=#ffaaaa   guifg=black	gui=none
+hi Visual	guibg=#ffaaaa   guifg=#000000	gui=none
 " hi VisualNOS
 
 hi Linenr	guibg=bg	guifg=#999999 gui=none
 
 " Uncomment these if you use Diff...??
-" hi DiffText	guibg=#cc0000	guifg=white gui=none
-" hi DiffAdd	guibg=#0000cc	guifg=white gui=none
-" hi DiffChange	guibg=#990099	guifg=white gui=none
+" hi DiffText	guibg=#cc0000	guifg=#ffffff gui=none
+" hi DiffAdd	guibg=#0000cc	guifg=#ffffff gui=none
+" hi DiffChange	guibg=#990099	guifg=#ffffff gui=none
 " hi DiffDelete	guibg=#888888	guifg=#333333 gui=none
 
 hi Directory	guibg=bg	guifg=#337700   gui=none
 
-hi IncSearch	guibg=#ffff00	guifg=black	gui=none
-hi Search	guibg=#d7d75f	guifg=black	gui=none
+hi IncSearch	guibg=#ffff00	guifg=#000000	gui=none
+hi Search	guibg=#d7d75f	guifg=#000000	gui=none
 hi SpecialKey	guibg=bg	guifg=fg    	gui=none
 hi Titled	guibg=bg	guifg=fg	gui=none
 
@@ -44,7 +44,7 @@ hi link	MoreMsg	    ModeMsg
 hi link Question    ModeMsg
 hi WarningMsg	    guibg=bg	guifg=#cc0000   gui=bold
 
-hi StatusLine	guibg=#ffeebb	guifg=black	gui=bold
+hi StatusLine	guibg=#ffeebb	guifg=#000000	gui=bold
 hi StatusLineNC	guibg=#aa8866	guifg=#f8e8cc	gui=none
 hi VertSplit	guibg=#aa8866	guifg=#ffe0bb	gui=none
 
@@ -93,13 +93,14 @@ hi link Delimiter   Special
 hi SpecialComment   guibg=#dddddd   guifg=#aa0000   gui=none
 hi link Debug	    Special
 
-hi Underlined guibg=bg guifg=blue gui=underline
+hi Underlined guibg=bg guifg=#0000ff gui=underline
 
 hi Title    guibg=bg	guifg=fg    	gui=bold
 hi Ignore   guibg=bg	guifg=#999999	gui=none
-hi Error    guibg=red	guifg=white	gui=none
+hi Error    guibg=#ff0000	guifg=#ffffff	gui=none
 hi Todo	    guibg=bg	guifg=#aa0000   gui=none
 
+hi Pmenu    guibg=#afafff
 
 
 " The same in cterm colors.
