@@ -21,6 +21,9 @@ for dir in split(&rtp, ',')  " 'runtimepath' to 'runtimepath'
   let rtp += [ dir ]
   let rtp += split(globpath(dir, 'runtimes/*'), '\n')
 endfor
+for dir in split(&rtp, ',')
+  let rtp += split(globpath(dir, 'runtimes/*/after'), '\n')
+endfor
 let &rtp = join(rtp, ',')
 unlet rtp
 
@@ -149,6 +152,8 @@ set expandtab               " Use spaces, not tabs, for autoindent/tab key.
 """" Tags
 set tags=./tags;/home       " Tags can be in ./tags, ../tags, ..., /home/tags.
 set showfulltag             " Show more information while completing tags.
+set cscopetag               " When using :tag, <C-]>, or "vim -t", try cscope:
+set cscopetagorder=0        " try ":cscope find g foo" and then ":tselect foo"
 
 """" Reading/Writing
 set noautowrite             " Never write a file unless I request it.
@@ -167,12 +172,18 @@ endif
 set writebackup             " Make a backup of the original file when writing
 set backup                  " and don't delete it after a succesful write.
 set backupskip=             " There are no files that shouldn't be backed up.
-set backupdir^=~/.backup    " Backups are written to ~/.backup/ if possible.
-set directory^=~/.backup    " Swap files are also written to ~/.backup, too.
 set updatetime=2000         " Write swap files after 2 seconds of inactivity.
 set backupext=~             " Backup for "file" is "file~"
+set backupdir^=~/.backup    " Backups are written to ~/.backup/ if possible.
+set directory^=~/.backup//  " Swap files are also written to ~/.backup, too.
+" ^ Here be magic! Quoth the help:
+" For Unix and Win32, if a directory ends in two path separators "//" or "\\",
+" the swap file name will be built from the complete path to the file with all
+" path separators substituted to percent '%' signs.  This will ensure file
+" name uniqueness in the preserve directory.
 
 """" Command Line
+set history=1000            " Keep a very long command-line history.
 set wildmenu                " Menu completion in command mode on <Tab>
 set wildmode=full           " <Tab> cycles between all matching choices.
 set wcm=<C-Z>               " Ctrl-Z in a mapping acts like <Tab> on cmdline
@@ -189,8 +200,15 @@ filetype plugin on          " also allow for filetype-specific plugins,
 syntax on                   " and turn on per-filetype syntax highlighting.
 
 """ Plugin Settings
-let g:lisp_rainbow=1        " Color parentheses by depth in LISP files.
-let g:is_posix=1            " I don't use systems where /bin/sh isn't POSIX.
+let lisp_rainbow=1          " Color parentheses by depth in LISP files.
+let is_posix=1              " I don't use systems where /bin/sh isn't POSIX.
+let bufExplorerFindActive=0 " Disable emulated 'switchbuf' from BufExplorer
+let vim_indent_cont=4       " Spaces to add for vimscript continuation lines
+let no_buffers_menu=1       " Disable gvim 'Buffers' menu
+let surround_indent=1       " Automatically reindent text surround.vim actions
+
+" Disable FuzzyFinder's MRU Command completion, since it breaks :debug
+let FuzzyFinderOptions = { 'MruCmd' : { 'mode_available' : 0 } }
 
 " Turn off automatic omnicompletion for C++, I'll ask for it if I want it.
 let [ OmniCpp_MayCompleteDot, OmniCpp_MayCompleteArrow ] = [ 0, 0 ]
@@ -228,15 +246,20 @@ if has("autocmd")
   " When reading a file, :cd to its parent directory unless it's a help file.
   au BufEnter * if &ft != 'help' | silent! cd %:p:h | endif
 
-  " Add doxygen, glib, and gtk highlighting to C and C++ files.
-  au FileType c,cpp nested let &l:filetype = expand("<amatch>")
-                            \ . ".doxygen.glib.gobject.gdk.gdkpixbuf.gtk.gimp"
-
   " Insert Vim-version as X-Editor in mail headers
   au FileType mail sil 1  | call search("^$")
                \ | sil put! ='X-Editor: Vim-' . Version()
 
   au Filetype * let &l:ofu = (len(&ofu) ? &ofu : 'syntaxcomplete#Complete')
+
+  au BufRead,BufNewFile ~/.zsh/.zfunctions/[^.]* setf zsh
+
+  au BufWritePost ~/.Xdefaults redraw|echo system('xrdb '.expand('<amatch>'))
+
+  au BufRead,BufNewFile * nested if &l:filetype =~# '^\(c\|cpp\)$'
+               \ | let &l:ft .= ".doxygen.glib.gobject.gdk.gdkpixbuf.gtk.gimp"
+               \ | endif
+
   augroup END
 endif
 
