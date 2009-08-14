@@ -33,48 +33,74 @@ function! s:CompareLines(l1, l2)
   return a:l1[0] == a:l2[0] ? 0 : a:l1[0] > a:l2[0] ? 1 : -1
 endfunction
 
+" Replace tabs with spaces in a string, preserving alignment.
+function! s:Retab(string)
+  let rv = ''
+  let i = 0
+
+  for char in split(a:string, '\zs')
+    if char == "\t"
+      let rv .= repeat(' ', &ts - i)
+      let i = 0
+    else
+      let rv .= char
+      let i = (i + 1) % &ts
+    endif
+  endfor
+
+  return rv
+endfunction
+
 function! s:IndentSort() range
   let savelz = &lz
   let &lz = 1
 
-  let beg = a:firstline
-  let end = a:lastline
+  try
+    let beg = a:firstline
+    let end = a:lastline
 
-  let lines = [ [ "", [] ] ]
+    let lines = [ [ "", [] ] ]
 
-  for i in range(beg, end)
-    let num=matchend(getline(i), " *")
-    if !exists("smallest") || num < smallest
-      let smallest = num
-    endif
-  endfor
-
-  for i in range(beg, end)
-    if matchend(getline(i), " *") == smallest
-      let lines = lines + [ [ getline(i), [] ] ]
-      if len(lines) == 2
-        let beg = i
+    for i in range(beg, end)
+      let num=strlen(s:Retab(matchstr(getline(i), '\s*')))
+      if !exists("smallest") || num < smallest
+        let smallest = num
       endif
-    else
-      call add(lines[-1][1], getline(i))
-    endif
-  endfor
-
-  let lines = lines[1:]
-  call sort(lines, "s:CompareLines")
-  " echoerr string(lines)
-  
-  let i = beg
-  for line in lines
-    call setline(i, line[0])
-    let i = i + 1
-    for more in line[1]
-      call setline(i, more)
-      let i = i + 1
     endfor
-  endfor
 
-  let &lz = savelz
+    for i in range(beg, end)
+      if strlen(s:Retab(matchstr(getline(i), '\s*'))) == smallest
+        let lines = lines + [ [ getline(i), [] ] ]
+        if len(lines) == 2
+          let beg = i
+        endif
+      else
+        call add(lines[-1][1], getline(i))
+      endif
+    endfor
+
+    let lines = lines[1:]
+    call sort(lines, "s:CompareLines")
+    " echoerr string(lines)
+
+    let i = beg
+    for line in lines
+      call setline(i, line[0])
+      let i = i + 1
+      let recstart = i
+      for more in line[1]
+        call setline(i, more)
+        let i = i + 1
+      endfor
+      let recend = i - 1
+      if recend > recstart
+        exe recstart . ',' . recend . 'call s:IndentSort()'
+      endif
+    endfor
+
+  finally
+    let &lz = savelz
+  endtry
 endfunction
 
 command! -nargs=0 -range -bar IndentSort :<line1>,<line2>call <SID>IndentSort()
