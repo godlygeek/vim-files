@@ -42,6 +42,9 @@ function! s:handler.read(path, file) dict
   echo ""
 
   call system(cmdline)
+  " Vim gets confused by the terminal attributes when the password prompt is
+  " displayed...
+  redraw!
 
   if v:shell_error
     return netlib#handler_error()
@@ -62,6 +65,9 @@ function! s:handler.write(path, file) dict
   echo cmdline
   echo ""
 
+  " Vim gets confused by the terminal attributes when the password prompt is
+  " displayed...
+  redraw!
   call system(cmdline)
 
   if v:shell_error

@@ -1,3 +1,4 @@
 add support for ftp, rcp, fetch
 test suite
-work out redraw bugs, particularly with sudo://
+make all handlers respect aliases/settings
+sudo: handle unreadable directories
