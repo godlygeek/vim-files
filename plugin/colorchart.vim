@@ -376,7 +376,7 @@ function! ColorChart()
     file Color\ Chart
   endif
 
-  setlocal nolist buftype=nofile bufhidden=wipe noswapfile tabstop=1 iskeyword+=[,] matchpairs=
+  setlocal nolist buftype=nofile bufhidden=wipe noswapfile tabstop=1 iskeyword+=[,] matchpairs= nocursorline nocursorcolumn
 
   call s:SetupColorChart()
 
