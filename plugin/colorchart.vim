@@ -304,8 +304,8 @@ function! s:SetupColorChartImpl()
   call append(line('$'), '')
   call append(line('$'), printf('Color %-5s%s', c . ': ', i))
   call append(line('$'), '')
-  call append(line('$'), 'Black on color ' .c. '      White on color ' .c. '')
-  call append(line('$'), 'Color ' .c. ' on black      Color ' .c. ' on white')
+  call append(line('$'), 'Black on color ' .c. '      White on color ' .c. '      Normal on color ' .c. '')
+  call append(line('$'), 'Color ' .c. ' on black      Color ' .c. ' on white      Color ' .c. ' on normal')
 
   let skip = ' skipwhite skipempty skipnl'
 
@@ -322,18 +322,22 @@ function! s:SetupColorChartImpl()
   endwhile
 
   for i in range(&t_Co)
-    exe printf('syn match colorchart%d_on_0  /\<Color %d on black\>\&.\{1,18\}/', i, i)
-    exe printf('syn match colorchart%d_on_15 /\<Color %d on white\>\&.\{1,18\}/', i, i)
-    exe printf('syn match colorchart0_on_%d  /\<Black on color %d\>\&.\{1,18\}/', i, i)
-    exe printf('syn match colorchart15_on_%d /\<White on color %d\>\&.\{1,18\}/', i, i)
+    exe printf('syn match colorchart%d_on_0   /\<Color %d on black\>\&.\{1,18\}/', i, i)
+    exe printf('syn match colorchart%d_on_15  /\<Color %d on white\>\&.\{1,18\}/', i, i)
+    exe printf('syn match colorchart%d_on_256 /\<Color %d on normal\>\&.\{1,19\}/', i, i)
+    exe printf('syn match colorchart0_on_%d   /\<Black on color %d\>\&.\{1,18\}/', i, i)
+    exe printf('syn match colorchart15_on_%d  /\<White on color %d\>\&.\{1,18\}/', i, i)
+    exe printf('syn match colorchart256_on_%d /\<Normal on color %d\>\&.\{1,19\}/', i, i)
   endfor
 
   for i in range(&t_Co)
     exe printf('hi colorchart%d ctermbg=%d ctermfg=%d', i, i, i)
     exe printf('hi colorchart%d_on_0  ctermfg=%d ctermbg=0 ', i, i)
     exe printf('hi colorchart%d_on_15 ctermfg=%d ctermbg=15', i, i)
+    exe printf('hi colorchart%d_on_256 ctermfg=%d ctermbg=bg', i, i)
     exe printf('hi colorchart0_on_%d  ctermbg=%d ctermfg=0 ', i, i)
     exe printf('hi colorchart15_on_%d ctermbg=%d ctermfg=15', i, i)
+    exe printf('hi colorchart256_on_%d ctermbg=%d ctermfg=fg', i, i)
   endfor
 endfunction
 
@@ -479,6 +483,7 @@ function! s:UpdatePreview()
     let text = substitute(text, 'Color \d\+:.*', info, '')
     let text = substitute(text, 'on color \zs\(\d\+\&.\{1,3}\)\ze', printf('%-3s', color), 'g')
     let text = substitute(text, 'Color \d\+ on \(black\|white\)\&.\{1,18}', '\=printf("%-18s", "Color " . color . " on " . submatch(1))', 'g')
+    let text = substitute(text, 'Color \d\+ on \(normal\)\&.\{1,19}', '\=printf("%-19s", "Color " . color . " on " . submatch(1))', 'g')
     call setline(line, text)
   endfor
 
