@@ -18,10 +18,11 @@
 
                                                               *colorchart-toc*
 
-1. Introduction                                      |colorchart-intro|
-2. Requirements                                      |colorchart-requirements|
-3. Changelog                                         |colorchart-changelog|
-4. Contact Info                                      |colorchart-author|
+1. Introduction                                   |colorchart-intro|
+2. Requirements                                   |colorchart-requirements|
+3. Acknowledgments                                |colorchart-acknowledgments|
+4. Changelog                                      |colorchart-changelog|
+5. Contact Info                                   |colorchart-author|
 
 The functionality mentioned here is a plugin, see |add-plugin|.
 You can avoid loading this plugin by setting the "ColorChart_loaded" global
@@ -92,12 +93,22 @@ like this, something like the following would be appropriate:
     endif
 
 ==============================================================================
-3. Changelog                                            *colorchart-changelog*
+3. Acknowledgments                                *colorchart-acknowledgments*
+
+The idea for this plugin, and the basic framework for the implementation, were
+borrowed from the "hicolors" plugin by Dr. Chip.
+
+The different shapes for the color cubes, and the logic for viewing those
+shapes with different tranforms for the origin location and the viewing angle,
+come from xterm_colour_chart2.py, by Ian Ward.
+
+==============================================================================
+4. Changelog                                            *colorchart-changelog*
 
  1.00   11 Dec 2009   Finally made my sandbox code releasable.
 
 ==============================================================================
-4. Contact Info                                            *colorchart-author*
+5. Contact Info                                            *colorchart-author*
 
 Your author, a Vim nerd with some free time, really enjoys seeing terminals
 look pretty.  He'd like to be notified of any problems you find - after all,
