@@ -13,7 +13,7 @@ if [ x"$1" = xpull ]; then
   git remote -v | sed 's/\t.*//' | while read remote; do
     if [ x"$remote" != xorigin ]; then
       echo "pulling from $remote"
-      git subtree merge --prefix="runtimes/$remote" "$remote/master"
+      git subtree pull --prefix="runtimes/$remote" "$remote" "master"
     fi
   done
 fi
