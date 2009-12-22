@@ -322,23 +322,22 @@ function! s:SetupColorChartImpl()
   endwhile
 
   for i in range(&t_Co)
-    exe printf('syn match colorchart%d_on_0   /\<Color %d on black\>\&.\{1,18\}/', i, i)
-    exe printf('syn match colorchart%d_on_15  /\<Color %d on white\>\&.\{1,18\}/', i, i)
-    exe printf('syn match colorchart%d_on_256 /\<Color %d on normal\>\&.\{1,19\}/', i, i)
-    exe printf('syn match colorchart0_on_%d   /\<Black on color %d\>\&.\{1,18\}/', i, i)
-    exe printf('syn match colorchart15_on_%d  /\<White on color %d\>\&.\{1,18\}/', i, i)
-    exe printf('syn match colorchart256_on_%d /\<Normal on color %d\>\&.\{1,19\}/', i, i)
+    exe printf('hi colorchart%d ctermbg=%d ctermfg=%d', i, i, i)
   endfor
 
-  for i in range(&t_Co)
-    exe printf('hi colorchart%d ctermbg=%d ctermfg=%d', i, i, i)
-    exe printf('hi colorchart%d_on_0  ctermfg=%d ctermbg=0 ', i, i)
-    exe printf('hi colorchart%d_on_15 ctermfg=%d ctermbg=15', i, i)
-    exe printf('hi colorchart%d_on_256 ctermfg=%d ctermbg=bg', i, i)
-    exe printf('hi colorchart0_on_%d  ctermbg=%d ctermfg=0 ', i, i)
-    exe printf('hi colorchart15_on_%d ctermbg=%d ctermfg=15', i, i)
-    exe printf('hi colorchart256_on_%d ctermbg=%d ctermfg=fg', i, i)
-  endfor
+  syn match colorchart_color_on_0   /\<Color \d\+ on black\>\&.\{1,18\}/
+  syn match colorchart_color_on_15  /\<Color \d\+ on white\>\&.\{1,18\}/
+  syn match colorchart_color_on_256 /\<Color \d\+ on normal\>\&.\{1,19\}/
+  syn match colorchart0_on_color    /\<Black on color \d\+\>\&.\{1,18\}/
+  syn match colorchart15_on_color   /\<White on color \d\+\>\&.\{1,18\}/
+  syn match colorchart256_on_color  /\<Normal on color \d\+\>\&.\{1,19\}/
+
+  exe printf('hi colorchart_color_on_0   ctermfg=%d ctermbg=0',  c)
+  exe printf('hi colorchart_color_on_15  ctermfg=%d ctermbg=15', c)
+  exe printf('hi colorchart_color_on_256 ctermfg=%d ctermbg=bg', c)
+  exe printf('hi colorchart0_on_color    ctermbg=%d ctermfg=0',  c)
+  exe printf('hi colorchart15_on_color   ctermbg=%d ctermfg=15', c)
+  exe printf('hi colorchart256_on_color  ctermbg=%d ctermfg=fg', c)
 endfunction
 
 " Calls SetupColorChartImpl, while handling saving and restoring options and
@@ -394,6 +393,7 @@ function! ColorChart()
   nnoremap <buffer> <silent> + :call <SID>ChangeChart(1)<CR>
 
   autocmd CursorMoved,CursorMovedI <buffer> call <SID>UpdatePreview()
+  autocmd ColorScheme <buffer> call <SID>SetupColorChart()
 endfunction
 
 " Update the preview based on the cursor's movement, assuming that it has
@@ -484,8 +484,16 @@ function! s:UpdatePreview()
     let text = substitute(text, 'on color \zs\(\d\+\&.\{1,3}\)\ze', printf('%-3s', color), 'g')
     let text = substitute(text, 'Color \d\+ on \(black\|white\)\&.\{1,18}', '\=printf("%-18s", "Color " . color . " on " . submatch(1))', 'g')
     let text = substitute(text, 'Color \d\+ on \(normal\)\&.\{1,19}', '\=printf("%-19s", "Color " . color . " on " . submatch(1))', 'g')
+
     call setline(line, text)
   endfor
+
+  exe printf('hi colorchart_color_on_0   ctermfg=%d ctermbg=0',  color)
+  exe printf('hi colorchart_color_on_15  ctermfg=%d ctermbg=15', color)
+  exe printf('hi colorchart_color_on_256 ctermfg=%d ctermbg=bg', color)
+  exe printf('hi colorchart0_on_color    ctermbg=%d ctermfg=0',  color)
+  exe printf('hi colorchart15_on_color   ctermbg=%d ctermfg=15', color)
+  exe printf('hi colorchart256_on_color  ctermbg=%d ctermfg=fg', color)
 
   setlocal nomodifiable nomodified
 endfunction
