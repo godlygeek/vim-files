@@ -400,9 +400,9 @@ endfunction
 " moved onto a "sensitive" part of the buffer.
 function! s:UpdatePreview()
   if line('.') == s:angle_line
-    let char = split(getline('.'), '\zs')[col('.')-1]
-    if char =~ '\d' && char != s:angle
-      let s:angle = char
+    let word = expand("<cword>")
+    if word =~ '^\d\+$' && word != s:angle
+      let s:angle = word
       call s:SetupColorChart()
     endif
 
@@ -410,9 +410,9 @@ function! s:UpdatePreview()
   endif
 
   if line('.') == s:origin_line
-    let char = split(getline('.'), '\zs')[col('.')-1]
-    if char =~ '\d' && char != s:origin
-      let s:origin = char
+    let word = expand("<cword>")
+    if word =~ '^\d\+$' && word != s:origin
+      let s:origin = word
       call s:SetupColorChart()
     endif
 
