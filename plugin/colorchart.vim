@@ -66,13 +66,25 @@ function! s:ColorChartInit()
   let s:angle = 0
   let s:origin = 0
 
+  let s:red = 0
+  let s:green = 0
+  let s:blue = 0
+
   let s:charts = { 8 : {}, 16 : {}, 88 : {}, 256 : {} }
   let s:origins = { }
   let s:angles = { }
 
+  let s:reds = { }
+  let s:greens = { }
+  let s:blues = { }
+
   for i in [ 8, 16, 88, 256 ]
     let s:angles[i]  = (i >= 88 ? range(6) : [0])
     let s:origins[i] = (i >= 88 ? range(8) : [0])
+
+    let s:reds[i] = (i > 88 ? range(6) : i == 88 ? range(4) : [])
+    let s:greens[i] = (i > 88 ? range(6) : i == 88 ? range(4) : [])
+    let s:blues[i] = (i > 88 ? range(6) : i == 88 ? range(4) : [])
   endfor
 
   let s:charts.8.ribbon =
@@ -279,30 +291,40 @@ function! s:SetupColorChartImpl()
   endif
 
   let s:origin_line = 1
-  let origin_msg = 'Choose viewing origin ({/}): ' . join(s:origins[&t_Co], ' ')
-  call setline(1, substitute(origin_msg, s:origin, '[\0]', ''))
+  let message = 'Choose viewing origin ({/}): ' . join(s:origins[&t_Co], ' ')
+  call setline(1, substitute(message, s:origin, '[\0]', ''))
 
   let s:angle_line = 2
-  let angle_msg  = 'Choose viewing angle ([/]):  ' . join(s:angles[&t_Co], ' ')
-  call setline(2, substitute(angle_msg, s:angle, '[\0]', ''))
+  let message  = 'Choose viewing angle ([/]):  ' . join(s:angles[&t_Co], ' ')
+  call setline(2, substitute(message, s:angle, '[\0]', ''))
 
   let s:chart_line = 3
-  let chart_msg = 'Choose chart (-/+):  ' . join(keys(s:charts[&t_Co]), ' ')
-  call setline(3, substitute(chart_msg, s:chart, '[\0]', ''))
+  let message = 'Choose chart (-/+):  ' . join(keys(s:charts[&t_Co]), ' ')
+  call setline(3, substitute(message, s:chart, '[\0]', ''))
+
+  call setline(4, '')
+
+  let s:red_line = 5
+  let s:green_line = 6
+  let s:blue_line = 7
+
+  call setline(s:red_line, substitute('  Red:  ' . join(s:reds[&t_Co], ' '), s:red, '[\0]', ''))
+  call setline(s:green_line, substitute('Green:  ' . join(s:greens[&t_Co], ' '), s:green, '[\0]', ''))
+  call setline(s:blue_line, substitute(' Blue:  ' . join(s:blues[&t_Co], ' '), s:blue, '[\0]', ''))
 
   " Marker, used by colorchartStart syntax match.
-  call setline(4, "\t")
+  call setline(8, "\t")
 
-  let s:chart_start = 5
-  call setline(5, split(substitute(chart, '\x\x', '__', 'g'), '\n'))
+  let s:chart_start = 9
+  call setline(9, split(substitute(chart, '\x\x', '__', 'g'), '\n'))
   let s:chart_end = line('$')
 
   " Ugly hack
   let c = get(s:, 'last_color', 0)
-  let i = get(s:, 'last_color_info', 'ANSI Black')
+  let i = get(s:, 'last_color_info', 'Color 0:   ANSI Black')
 
   call append(line('$'), '')
-  call append(line('$'), printf('Color %-5s%s', c . ': ', i))
+  call append(line('$'), i)
   call append(line('$'), '')
   call append(line('$'), 'Black on color ' .c. '      White on color ' .c. '      Normal on color ' .c. '')
   call append(line('$'), 'Color ' .c. ' on black      Color ' .c. ' on white      Color ' .c. ' on normal')
@@ -338,12 +360,14 @@ function! s:SetupColorChartImpl()
   exe printf('hi colorchart0_on_color    ctermbg=%d ctermfg=0',  c)
   exe printf('hi colorchart15_on_color   ctermbg=%d ctermfg=15', c)
   exe printf('hi colorchart256_on_color  ctermbg=%d ctermfg=fg', c)
+
+  call s:JumpToColor()
 endfunction
 
 " Calls SetupColorChartImpl, while handling saving and restoring options and
 " the cursor position
 function! s:SetupColorChart()
-  let cursor_pos = getpos('.')
+  "let cursor_pos = getpos('.')
   let old_ei = &ei
   let old_lz = &lz
 
@@ -355,7 +379,7 @@ function! s:SetupColorChart()
   finally
     setlocal nomodifiable nomodified
 
-    call setpos('.', cursor_pos)
+    "call setpos('.', cursor_pos)
 
     let &ei = old_ei
     let &lz = old_lz
@@ -392,8 +416,57 @@ function! ColorChart()
   nnoremap <buffer> <silent> - :call <SID>ChangeChart(-1)<CR>
   nnoremap <buffer> <silent> + :call <SID>ChangeChart(1)<CR>
 
-  autocmd CursorMoved,CursorMovedI <buffer> call <SID>UpdatePreview()
+  nnoremap <buffer> <silent> <leader>r :call <SID>ChangeColor( 1, 0, 0)<CR>
+  nnoremap <buffer> <silent> <leader>R :call <SID>ChangeColor(-1, 0, 0)<CR>
+
+  nnoremap <buffer> <silent> <leader>g :call <SID>ChangeColor(0,  1, 0)<CR>
+  nnoremap <buffer> <silent> <leader>G :call <SID>ChangeColor(0, -1, 0)<CR>
+
+  nnoremap <buffer> <silent> <leader>b :call <SID>ChangeColor(0, 0,  1)<CR>
+  nnoremap <buffer> <silent> <leader>B :call <SID>ChangeColor(0, 0, -1)<CR>
+
+  autocmd CursorMoved,CursorMovedI <buffer> nested call <SID>UpdatePreview()
   autocmd ColorScheme <buffer> call <SID>SetupColorChart()
+endfunction
+
+function! s:ChangeColor(rdelta, gdelta, bdelta)
+  let color = get(s:, 'last_color', 0)
+  let cube_size = (&t_Co == 88 ? 4 : 6)
+
+  let delta = [ a:rdelta, a:gdelta, a:bdelta ]
+
+  "echomsg "Color before: " . color
+
+  if color >= 16 && color < 16 + cube_size * cube_size * cube_size
+    let rgb = [ (color - 16) / cube_size / cube_size,
+              \ (color - 16) / cube_size % cube_size,
+              \ (color - 16) % cube_size ]
+
+    "echomsg "color components before: " . string(rgb)
+
+    for i in range(len(rgb))
+      let rgb[i] += delta[i]
+
+      if rgb[i] < 0
+        let rgb[i] = 0
+      endif
+
+      if rgb[i] > cube_size - 1
+        let rgb[i] = cube_size - 1
+      endif
+    endfor
+
+    "echomsg "color components after: " . string(rgb)
+
+    let color = rgb[0] * cube_size * cube_size
+            \ + rgb[1] * cube_size
+            \ + rgb[2]
+            \ + 16
+
+    call s:JumpToColor(color)
+  endif
+
+  "echomsg "Color after: " . color
 endfunction
 
 " Update the preview based on the cursor's movement, assuming that it has
@@ -429,16 +502,37 @@ function! s:UpdatePreview()
     return
   endif
 
-  if line('.') < s:chart_start || line('.') > s:chart_end
-    " Not in the chart, no possible redraw
-    return
-  endif
+  for colorname in [ 'red', 'green', 'blue' ]
+    if line('.') == get(s:, colorname . '_line')
+      let word = expand("<cword>")
+      if word =~ '^\d\+$' && word != get(s:, colorname)
+        let s:[colorname] = word
 
-  let name = synIDattr(synIDtrans(synID(line('.'), col('.'), 1)), 'name')
-  let color = matchstr(name, 'colorchart\zs\d\+')
+        echomsg string([ s:red, s:green, s:blue ])
 
-  if empty(color)
-    return
+        let cube_size = (&t_Co == 88 ? 4 : 6)
+
+        let jump_to_color = 1
+        let color = (s:red * (cube_size * cube_size)
+                \ +  s:green * (cube_size)
+                \ +  s:blue
+                \ +  16)
+      endif
+    endif
+  endfor
+
+  if !exists('color')
+    if line('.') < s:chart_start || line('.') > s:chart_end
+      " Not in the chart, no possible redraw
+      return
+    endif
+
+    let name = synIDattr(synIDtrans(synID(line('.'), col('.'), 1)), 'name')
+    let color = matchstr(name, 'colorchart\zs\d\+')
+
+    if empty(color)
+      return
+    endif
   endif
 
   if color < 16
@@ -460,7 +554,12 @@ function! s:UpdatePreview()
       let info .= 'xterm clones: #' . x[idx[0]] . x[idx[1]] . x[idx[2]]
       let info .= '  konsole: #' . k[idx[0]] . k[idx[1]] . k[idx[2]]
       let info .= '  eterm: #' . e[idx[0]] . e[idx[1]] . e[idx[2]]
+
+      let s:red   = idx[0]
+      let s:green = idx[1]
+      let s:blue  = idx[2]
     endif
+
   else " t_Co=88
     let info = 'Color ' . printf('%-5s', color . ': ')
     if color >= 80
@@ -470,6 +569,10 @@ function! s:UpdatePreview()
       let u = [ '00', '8b', 'cd', 'ff' ]
       let idx = [ (color - 16) / 16, (color - 16) % 16 / 4, (color - 16) % 4 ]
       let info .= '#' . u[idx[0]] . u[idx[1]] . u[idx[2]]
+
+      let s:red   = idx[0]
+      let s:green = idx[1]
+      let s:blue  = idx[2]
     endif
   endif
 
@@ -488,6 +591,10 @@ function! s:UpdatePreview()
     call setline(line, text)
   endfor
 
+  call setline(s:red_line, substitute('  Red (\R \r):  ' . join(s:reds[&t_Co], ' '), s:red, '[\0]', ''))
+  call setline(s:green_line, substitute('Green (\G \g):  ' . join(s:greens[&t_Co], ' '), s:green, '[\0]', ''))
+  call setline(s:blue_line, substitute(' Blue (\B \b):  ' . join(s:blues[&t_Co], ' '), s:blue, '[\0]', ''))
+
   exe printf('hi colorchart_color_on_0   ctermfg=%d ctermbg=0',  color)
   exe printf('hi colorchart_color_on_15  ctermfg=%d ctermbg=15', color)
   exe printf('hi colorchart_color_on_256 ctermfg=%d ctermbg=bg', color)
@@ -496,6 +603,40 @@ function! s:UpdatePreview()
   exe printf('hi colorchart256_on_color  ctermbg=%d ctermfg=fg', color)
 
   setlocal nomodifiable nomodified
+
+  if get(l:, 'jump_to_color', 0)
+    call s:JumpToColor()
+  endif
+endfunction
+
+function! s:JumpToColor(...)
+  let s:jump_count = get(s:, 'jump_count', 0) + 1
+
+  if a:0
+    let color = a:1
+  else
+    let color = get(s:, 'last_color', 0)
+  endif
+
+  if &t_Co == 256
+    let chartstr = s:GetChart(get(s:, 'chart', 'whales'))
+  elseif &t_Co == 88
+    let chartstr = s:GetChart(get(s:, 'chart', 'whales'))
+  else
+    let chartstr = s:GetChart(get(s:, 'chart', 'ribbon'))
+  endif
+
+  let chart = split(chartstr, "\n")
+
+  for i in range(len(chart))
+    let col = match(chart[i], '\<\%(\x\x\)*\zs' . printf("%02x", color))
+    if col != -1
+      call cursor(s:chart_start + i, col+1)
+      return
+    endif
+  endfor
+
+  echoerr "JumpToColor failed!"
 endfunction
 
 " Cycle to another origin
