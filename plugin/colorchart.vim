@@ -220,6 +220,35 @@ function! s:ColorChartInit()
       \ . "                    55799dc1\n"
       \ . "0001020304050607    54789cc0              f3f2f1f0efeeedecebeae9e8\n"
       \ . "08090a0b0c0d0e0f    53779bbf              f4f5f6f7f8f9fafbfcfdfeff\n"
+
+  " For each preference, store its global variable into the local foo_pref.
+  " Handle both pref = { 88: 1, 256 : 2 } and pref = 42; default to -1
+  for pref in [ 'angle', 'origin', 'chart' ]
+    let actualval = get(g:, 'colorchart_' . pref, -1)
+
+    if type(actualval) == type(0) || type(actualval) == type('')
+      let {pref}_pref = str2nr(actualval)
+    elseif type(actualval) == type({})
+      let {pref}_pref = get(actualval, &t_Co, -1)
+    else
+      let {pref}_pref = -1
+    endif
+
+    unlet actualval " May change types next iteration...
+  endfor
+
+  if index(s:angles[&t_Co], angle_pref) >= 0
+    let s:angle = angle_pref
+  endif
+
+  if index(s:origins[&t_Co], origin_pref) >= 0
+    let s:origin = origin_pref
+  endif
+
+  if has_key(s:charts[&t_Co], chart_pref)
+    let s:chart = chart_pref
+  endif
+
 endfunction
 
 " Retrieves a chart by name, transforming it for the chosen angle and origin
