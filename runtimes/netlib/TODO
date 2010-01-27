@@ -1,4 +1,0 @@
-add support for ftp, rcp, fetch
-test suite
-make all handlers respect aliases/settings
-sudo: handle unreadable directories
