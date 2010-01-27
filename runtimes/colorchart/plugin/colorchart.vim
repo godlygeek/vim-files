@@ -66,9 +66,7 @@ function! s:ColorChartInit()
   let s:angle = 0
   let s:origin = 0
 
-  let s:red = 0
-  let s:green = 0
-  let s:blue = 0
+  let s:last_color = 0
 
   let s:charts = { 8 : {}, 16 : {}, 88 : {}, 256 : {} }
   let s:origins = { }
@@ -222,6 +220,35 @@ function! s:ColorChartInit()
       \ . "                    55799dc1\n"
       \ . "0001020304050607    54789cc0              f3f2f1f0efeeedecebeae9e8\n"
       \ . "08090a0b0c0d0e0f    53779bbf              f4f5f6f7f8f9fafbfcfdfeff\n"
+
+  " For each preference, store its global variable into the local foo_pref.
+  " Handle both pref = { 88: 1, 256 : 2 } and pref = 42; default to -1
+  for pref in [ 'angle', 'origin', 'chart' ]
+    let actualval = get(g:, 'colorchart_' . pref, -1)
+
+    if type(actualval) == type(0) || type(actualval) == type('')
+      let {pref}_pref = str2nr(actualval)
+    elseif type(actualval) == type({})
+      let {pref}_pref = get(actualval, &t_Co, -1)
+    else
+      let {pref}_pref = -1
+    endif
+
+    unlet actualval " May change types next iteration...
+  endfor
+
+  if index(s:angles[&t_Co], angle_pref) >= 0
+    let s:angle = angle_pref
+  endif
+
+  if index(s:origins[&t_Co], origin_pref) >= 0
+    let s:origin = origin_pref
+  endif
+
+  if has_key(s:charts[&t_Co], chart_pref)
+    let s:chart = chart_pref
+  endif
+
 endfunction
 
 " Retrieves a chart by name, transforming it for the chosen angle and origin
@@ -308,9 +335,9 @@ function! s:SetupColorChartImpl()
   let s:green_line = 6
   let s:blue_line = 7
 
-  call setline(s:red_line, substitute('  Red:  ' . join(s:reds[&t_Co], ' '), s:red, '[\0]', ''))
-  call setline(s:green_line, substitute('Green:  ' . join(s:greens[&t_Co], ' '), s:green, '[\0]', ''))
-  call setline(s:blue_line, substitute(' Blue:  ' . join(s:blues[&t_Co], ' '), s:blue, '[\0]', ''))
+  call setline(s:red_line, substitute('  Red:  ' . join(s:reds[&t_Co], ' '), s:red(), '[\0]', ''))
+  call setline(s:green_line, substitute('Green:  ' . join(s:greens[&t_Co], ' '), s:green(), '[\0]', ''))
+  call setline(s:blue_line, substitute(' Blue:  ' . join(s:blues[&t_Co], ' '), s:blue(), '[\0]', ''))
 
   " Marker, used by colorchartStart syntax match.
   call setline(8, "\t")
@@ -416,17 +443,60 @@ function! ColorChart()
   nnoremap <buffer> <silent> - :call <SID>ChangeChart(-1)<CR>
   nnoremap <buffer> <silent> + :call <SID>ChangeChart(1)<CR>
 
-  nnoremap <buffer> <silent> <leader>r :call <SID>ChangeColor( 1, 0, 0)<CR>
-  nnoremap <buffer> <silent> <leader>R :call <SID>ChangeColor(-1, 0, 0)<CR>
+  nnoremap <buffer> <silent> <leader>r :<C-U>call <SID>ChangeColor( 1 * v:count1, 0, 0)<CR>
+  nnoremap <buffer> <silent> <leader>R :<C-U>call <SID>ChangeColor(-1 * v:count1, 0, 0)<CR>
 
-  nnoremap <buffer> <silent> <leader>g :call <SID>ChangeColor(0,  1, 0)<CR>
-  nnoremap <buffer> <silent> <leader>G :call <SID>ChangeColor(0, -1, 0)<CR>
+  nnoremap <buffer> <silent> <leader>g :<C-U>call <SID>ChangeColor(0,  1 * v:count1, 0)<CR>
+  nnoremap <buffer> <silent> <leader>G :<C-U>call <SID>ChangeColor(0, -1 * v:count1, 0)<CR>
 
-  nnoremap <buffer> <silent> <leader>b :call <SID>ChangeColor(0, 0,  1)<CR>
-  nnoremap <buffer> <silent> <leader>B :call <SID>ChangeColor(0, 0, -1)<CR>
+  nnoremap <buffer> <silent> <leader>b :<C-U>call <SID>ChangeColor(0, 0,  1 * v:count1)<CR>
+  nnoremap <buffer> <silent> <leader>B :<C-U>call <SID>ChangeColor(0, 0, -1 * v:count1)<CR>
+
+  nnoremap <buffer> <silent> gc :<C-U>call <SID>ColorByNumber(v:count, +1)<CR>
+  nnoremap <buffer> <silent> gC :<C-U>call <SID>ColorByNumber(v:count, -1)<CR>
 
   autocmd CursorMoved,CursorMovedI <buffer> nested call <SID>UpdatePreview()
   autocmd ColorScheme <buffer> call <SID>SetupColorChart()
+endfunction
+
+function! s:red()
+    let cube_size = (&t_Co == 88 ? 4 : 6)
+    if s:last_color < 16 || s:last_color >= 16 + cube_size * cube_size * cube_size
+        return -1
+    endif
+    return (s:last_color - 16) / (cube_size * cube_size)
+endfunction
+
+function! s:green()
+    let cube_size = (&t_Co == 88 ? 4 : 6)
+    if s:last_color < 16 || s:last_color >= 16 + cube_size * cube_size * cube_size
+        return -1
+    endif
+    return (s:last_color - 16) / cube_size % cube_size
+endfunction
+
+function! s:blue()
+    let cube_size = (&t_Co == 88 ? 4 : 6)
+    if s:last_color < 16 || s:last_color >= 16 + cube_size * cube_size * cube_size
+        return -1
+    endif
+    return (s:last_color - 16) % cube_size
+endfunction
+
+function! s:ColorByNumber(count, direction)
+    let color = a:count
+
+    if !color
+        let color = s:last_color + a:direction
+    endif
+
+    if color < 0
+        let color = 0
+    elseif color > &t_Co - 1
+        let color = &t_Co - 1
+    endif
+
+    call s:JumpToColor(color)
 endfunction
 
 function! s:ChangeColor(rdelta, gdelta, bdelta)
@@ -502,20 +572,35 @@ function! s:UpdatePreview()
     return
   endif
 
+  let red = s:red()
+  let green = s:green()
+  let blue = s:blue()
+
   for colorname in [ 'red', 'green', 'blue' ]
     if line('.') == get(s:, colorname . '_line')
       let word = expand("<cword>")
-      if word =~ '^\d\+$' && word != get(s:, colorname)
-        let s:[colorname] = word
+      if word =~ '^\d\+$' && word != get(l:, colorname)
 
-        echomsg string([ s:red, s:green, s:blue ])
+        if l:red == -1
+            let l:red = 0
+        endif
+
+        if l:green == -1
+            let l:green = 0
+        endif
+
+        if l:blue == -1
+            let l:blue = 0
+        endif
+
+        let l:[colorname] = word
 
         let cube_size = (&t_Co == 88 ? 4 : 6)
 
         let jump_to_color = 1
-        let color = (s:red * (cube_size * cube_size)
-                \ +  s:green * (cube_size)
-                \ +  s:blue
+        let color = (l:red * (cube_size * cube_size)
+                \ +  l:green * (cube_size)
+                \ +  l:blue
                 \ +  16)
       endif
     endif
@@ -591,9 +676,9 @@ function! s:UpdatePreview()
     call setline(line, text)
   endfor
 
-  call setline(s:red_line, substitute('  Red (\R \r):  ' . join(s:reds[&t_Co], ' '), s:red, '[\0]', ''))
-  call setline(s:green_line, substitute('Green (\G \g):  ' . join(s:greens[&t_Co], ' '), s:green, '[\0]', ''))
-  call setline(s:blue_line, substitute(' Blue (\B \b):  ' . join(s:blues[&t_Co], ' '), s:blue, '[\0]', ''))
+  call setline(s:red_line, substitute('  Red (\R \r):  ' . join(s:reds[&t_Co], ' '), s:red(), '[\0]', ''))
+  call setline(s:green_line, substitute('Green (\G \g):  ' . join(s:greens[&t_Co], ' '), s:green(), '[\0]', ''))
+  call setline(s:blue_line, substitute(' Blue (\B \b):  ' . join(s:blues[&t_Co], ' '), s:blue(), '[\0]', ''))
 
   exe printf('hi colorchart_color_on_0   ctermfg=%d ctermbg=0',  color)
   exe printf('hi colorchart_color_on_15  ctermfg=%d ctermbg=15', color)
