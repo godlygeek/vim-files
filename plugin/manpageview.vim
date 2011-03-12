@@ -24,11 +24,11 @@ function! s:ReadManPage(topic)
   if exists('g:fit_manpages_to_window') && g:fit_manpages_to_window
     let cmdline .= printf('COLUMNS=%d MANWIDTH=%d ', winwidth(0), winwidth(0))
   endif
-  let cmdline .= 'man ' . a:topic
+  let cmdline .= 'man ' . a:topic . ' 2>/dev/null'
   let cmdline .= ' | col'
 
   " See if 'col' accepts the '-p' switch
-  call system('col -p', 'foo')
+  call system('col -p 2>/dev/null', 'foo')
   if v:shell_error == 0
     let cmdline .= ' -p'
   endif
