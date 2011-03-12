@@ -10,12 +10,6 @@ set cpo&vim
 
 com! -nargs=* Man call s:ManPageView(<q-args>)
 
-function! s:GetArticle(topic)
-  let file = (split(system("man -w ".a:topic." 2>/dev/null"), '\n') + [""])[0]
-  let basename = substitute(file, '.*/', '', '')
-  return matchlist(basename, '\(.\{-}\)\.\([^.]*\)\(\.gz\)\=$')[1:2]
-endfunction
-
 " Get result of "man | col" as a List
 function! s:ReadManPage(topic)
   " MAN_KEEP_FORMATTING:
@@ -26,7 +20,7 @@ function! s:ReadManPage(topic)
   " removing backspaces from the file.  Doesn't expand right, either.
   " Note: This should have no effect on non-Linux systems.
 
-  let cmdline = 'env MAN_KEEP_FORMATTING=1 MANPAGER= PAGER= '
+  let cmdline = 'env MAN_KEEP_FORMATTING=1 MANPAGER=cat PAGER=cat '
   if exists('g:fit_manpages_to_window') && g:fit_manpages_to_window
     let cmdline .= printf('COLUMNS=%d MANWIDTH=%d ', winwidth(0), winwidth(0))
   endif
@@ -54,18 +48,17 @@ function! s:ReadManPage(topic)
 endfunction
 
 function! s:ManPageView(topic)
-  new
-  let article = s:GetArticle(a:topic)
-  if article == []
+  let page = s:ReadManPage(a:topic)
+
+  if len(page) < 3
     echohl ErrorMsg
     echomsg "No article found matching \"" . a:topic . "\""
     echohl None
     return
   endif
-  exe 'sil! file!' escape(article[0].'('.article[1].')', ' \')
-  setlocal noswapfile
 
-  let page = s:ReadManPage(a:topic)
+  new
+  setlocal noswapfile
 
   call setline(1, page)
 
@@ -74,6 +67,23 @@ function! s:ManPageView(topic)
   sil retab
 
   setlocal ro nomod noma bh=wipe ft=man nolist nonu nowrap bt=nofile
+
+  let bufname=''
+  if getline(nextnonblank(1)) =~ ')\s*$'
+      let bufname = getline(nextnonblank(1))
+      let bufname = substitute(bufname, '.\{-}\(\S\+\s*([^)]*)\)\s*$', '\1', '')
+  endif
+
+  if !empty(bufname)
+      exe 'sil! file! ' . bufname
+  else
+      try
+          exe 'sil! file! ' . fnameescape(a:topic)
+      catch
+          exe 'sil! file! ' . escape(a:topic)
+      endtry
+  endif
+
 endfunction
 
 let &cpo = s:keepcpo
