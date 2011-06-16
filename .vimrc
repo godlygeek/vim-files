@@ -16,16 +16,7 @@ set nocompatible
 if version >= 700
 """ Settings
 """" Locations searched for scripts
-let rtp = []                 " Add anything in a 'runtimes' subdirectory of
-for dir in split(&rtp, ',')  " 'runtimepath' to 'runtimepath'
-  let rtp += [ dir ]
-  let rtp += split(globpath(dir, 'runtimes/*'), '\n')
-endfor
-for dir in split(&rtp, ',')
-  let rtp += split(globpath(dir, 'runtimes/*/after'), '\n')
-endfor
-let &rtp = join(rtp, ',')
-unlet rtp
+call pathogen#infect('runtimes')
 
 """" Mouse, Keyboard, Terminal
 set mouse=nv                " Allow mouse use in normal and visual mode.
