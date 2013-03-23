@@ -27,6 +27,7 @@ if !has("python")
   finish
 endif
 
+function! s:load_python_functions()
 python << EOS
 import vim
 import unicodedata
@@ -38,5 +39,15 @@ def char_under_cursor():
 def format_char_name(c):
     return 'U+%04X %s' % (ord(c), unicodedata.name(c, ''))
 EOS
+endfunction
 
-command! UnicodeName  python print format_char_name(char_under_cursor())
+function! s:UnicodeName()
+  if !exists("s:loaded_python_functions")
+    let s:loaded_python_functions = 1
+    call s:load_python_functions()
+  endif
+
+  python print format_char_name(char_under_cursor())
+endfunction
+
+command! UnicodeName  call s:UnicodeName()
