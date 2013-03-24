@@ -136,8 +136,8 @@ let &statusline = '%<%f%{&mod?"[+]":""}%r%'
 """" Tabs/Indent Levels
 set autoindent              " Do dumb autoindentation when no filetype is set
 set tabstop=8               " Real tab characters are 8 spaces wide,
-set shiftwidth=2            " but an indent level is 2 spaces wide.
-set softtabstop=2           " <BS> over an autoindent deletes both spaces.
+set shiftwidth=4            " but an indent level is 2 spaces wide.
+set softtabstop=4           " <BS> over an autoindent deletes both spaces.
 set expandtab               " Use spaces, not tabs, for autoindent/tab key.
 
 """" Tags
@@ -361,7 +361,7 @@ function! EatChar(pat)
   return (c =~ a:pat) ? '' : c
 endfunc
 
-iabbr _me Matthew Wozniski (mjw@drexel.edu)<C-R>=EatChar('\s')<CR>
+iabbr _me Matthew Wozniski (godlygeek@gmail.com)<C-R>=EatChar('\s')<CR>
 iabbr #i< #include <><left><C-R>=EatChar('\s')<CR>
 iabbr #i" #include ""<left><C-R>=EatChar('\s')<CR>
 iabbr _t  <C-R>=strftime("%H:%M:%S")<CR><C-R>=EatChar('\s')<CR>
@@ -479,6 +479,13 @@ command! -nargs=1 -complete=dir Rename saveas <args> | call delete(expand("#"))
 
 "" Stop skipping here
 endif
+
+function! StripHtml(first, last)
+  sil! exe a:first . ',' . a:last . '!links2 -dump file:///dev/stdin'
+  sil! '[,']s/\(^ \|\s*$\)//g
+endfunction
+
+command -range=% StripHtml call StripHtml(<line1>, <line2>)
 
 "" vim:fdm=expr:fdl=0
 "" vim:fde=getline(v\:lnum)=~'^""'?'>'.(matchend(getline(v\:lnum),'""*')-2)\:'='
