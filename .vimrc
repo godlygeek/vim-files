@@ -247,9 +247,7 @@ if has("autocmd")
 
   au BufWritePost ~/.Xdefaults redraw|echo system('xrdb '.expand('<amatch>'))
 
-  au BufRead,BufNewFile * nested if &l:filetype =~# '^\(c\|cpp\)$'
-               \ | let &l:ft .= ".doxygen.glib.gobject.gdk.gdkpixbuf.gtk.gimp"
-               \ | endif
+  au FileType c,cpp nested let &l:ft .= ".doxygen.glib.gobject.gdk.gdkpixbuf.gtk.gimp"
 
   augroup END
 endif
@@ -268,11 +266,11 @@ endif
 """ Key Mappings
 
 " Make [[ and ]] work even if the { is not in the first column
-nnoremap <silent> [[ :call search('^\S\@=.*{$', 'besW')<CR>
-nnoremap <silent> ]] :call search('^\S\@=.*{$', 'esW')<CR>
-onoremap <expr> [[ (search('^\S\@=.*{$', 'ebsW') && (setpos("''", getpos('.'))
+nnoremap <silent> [[ :call search('^\S\@=.*{\s*$', 'besW')<CR>
+nnoremap <silent> ]] :call search('^\S\@=.*{\s*$', 'esW')<CR>
+onoremap <expr> [[ (search('^\S\@=.*{\s*$', 'ebsW') && (setpos("''", getpos('.'))
                   \ <bar><bar> 1) ? "''" : "\<ESC>")
-onoremap <expr> ]] (search('^\S\@=.*{$', 'esW') && (setpos("''", getpos('.'))
+onoremap <expr> ]] (search('^\S\@=.*{\s*$', 'esW') && (setpos("''", getpos('.'))
                   \ <bar><bar> 1) ? "''" : "\<ESC>")
 
 " Use \sq to squeeze blank lines with :Squeeze, defined below
@@ -290,6 +288,10 @@ cnoremap <ESC><BS> <C-W>
 " Extra functionality for some existing commands:
 " <C-6> switches back to the alternate file and the correct column in the line.
 nnoremap <C-6> <C-6>`"
+
+" Swap ` and ' in normal mode - I normally want ``, but '' is easier to hit
+nnoremap ` '
+nnoremap ' `
 
 " CTRL-g shows filename and buffer number, too.
 nnoremap <C-g> 2<C-g>
