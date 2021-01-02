@@ -1,6 +1,10 @@
 " TODO:  Is there any way to support the :tab modifier?
 "        Reuse existing windows where possible
 "        Make a map on K?
+if has("nvim")
+  finish
+endif
+
 if &cp || exists("g:loaded_manpageview")
  finish
 endif
