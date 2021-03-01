@@ -233,7 +233,7 @@ nnoremap <leader>bsd :BSD<CR>
 nnoremap <leader>sk :Skel<CR>
 
 " Insert a modeline on the last line with <leader>ml
-nmap <leader>ml :$put =ModelineStub()<CR>
+nmap <leader>ml :$put =<SID>ModelineStub()<CR>
 
 " Tapping C-W twice brings me to previous window, not next.
 nnoremap <C-w><C-w> :winc p<CR>
@@ -283,14 +283,14 @@ function! s:ToggleTooLongHL()
   endif
 endfunction
 
-function! ModelineStub()
+function! s:ModelineStub()
   let fmt = ' vim: set ts=%d sts=%d sw=%d %set: '
   let x = printf(&cms, printf(fmt, &ts, &sts, &sw, (&et?"":"no")))
   return substitute(substitute(x, '\ \+', ' ', 'g'), ' $', '', '')
 endfunction
 
 " Replace tabs with spaces in a string, preserving alignment.
-function! Retab(string)
+function! s:Retab(string)
   let rv = ''
   let i = 0
 
@@ -310,11 +310,11 @@ endfunction
 " Right align the portion of the current line to the right of the cursor.
 " If an optional argument is given, it is used as the width to align to,
 " otherwise textwidth is used if set, otherwise 80 is used.
-function! AlignRight(...)
+function! s:AlignRight(...)
   if getline('.') =~ '^\s*$'
     call setline('.', '')
   else
-    let line = Retab(getline('.'))
+    let line = s:Retab(getline('.'))
 
     let prefix = matchstr(line, '.*\%' . virtcol('.') . 'v')
     let suffix = matchstr(line, '\%' . virtcol('.') . 'v.*')
@@ -332,7 +332,7 @@ function! AlignRight(...)
     call setline('.', prefix . repeat(' ', spaces) . suffix)
   endif
 endfunction
-com! -nargs=? AlignRight :call AlignRight(<f-args>)
+com! -nargs=? AlignRight :call <SID>AlignRight(<f-args>)
 
 command! -nargs=1 -complete=dir Rename saveas <args> | call delete(expand("#"))
 
