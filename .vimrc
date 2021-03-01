@@ -247,7 +247,7 @@ if has("autocmd")
 
   au BufWritePost ~/.Xdefaults redraw|echo system('xrdb '.expand('<amatch>'))
 
-  au FileType c,cpp nested let &l:ft .= ".doxygen.glib.gobject.gdk.gdkpixbuf.gtk.gimp"
+  "au FileType c,cpp nested let &l:ft .= ".doxygen.glib.gobject.gdk.gdkpixbuf.gtk.gimp"
 
   augroup END
 endif
@@ -323,10 +323,10 @@ noremap Q gq
 nnoremap <silent> gqJ :call Exe#ExeWithOpts('norm! gqj', { 'tw' : 2147483647 })<CR>
 
 " <space> toggles folds opened and closed
-nnoremap <space> za
+nmap <space> za
 
 " <space> in visual mode creates a fold over the marked range
-vnoremap <space> zf
+vmap <space> zf
 
 " Pressing an 'enter visual mode' key while in visual mode changes mode.
 vmap <C-V> <ESC>`<<C-v>`>
@@ -354,6 +354,9 @@ nnoremap <C-w><C-e> :winc w<CR>
 
 " Y behaves like D rather than like dd
 nnoremap Y y$
+
+" ctrl-backspace deletes the last word when inserting
+inoremap <C-_> <C-w>
 
 """ Abbreviations
 function! EatChar(pat)
@@ -487,5 +490,15 @@ endfunction
 
 command -range=% StripHtml call StripHtml(<line1>, <line2>)
 
-"" vim:fdm=expr:fdl=0
-"" vim:fde=getline(v\:lnum)=~'^""'?'>'.(matchend(getline(v\:lnum),'""*')-2)\:'='
+let g:ale_cpp_clangd_executable = 'clangd-10'
+let g:ale_c_clangd_executable = 'clangd-10'
+let g:ale_cpp_clangformat_executable = 'clang-format-10'
+let g:ale_c_clangformat_executable = 'clang-format-10'
+let g:ale_linters = {'cpp': ['clangd']}
+au FileType c,cpp setlocal omnifunc=ale#completion#OmniFunc
+
+let g:lsp_ignorecase = 0
+let g:lsp_diagnostics_echo_cursor = 1
+
+let g:fastfold_minlines = 0
+set signcolumn=number
