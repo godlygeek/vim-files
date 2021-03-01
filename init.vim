@@ -248,8 +248,24 @@ nnoremap Y y$
 imap <C-_> <C-w>
 
 """ Abbreviations
+function! s:InsertCloseBraceAfterCR(open, close)
+    let c = nr2char(getchar(0))
+    if c == "\r"
+        return a:open . c . a:close . "\<C-o>O"
+    endif
+    return a:open . c
+endfunction
+
+function! s:EatChar(pat)
+  let c = nr2char(getchar(0))
+  return (c =~ a:pat) ? '' : c
+endfunc
+
 iabbr _me Matt Wozniski <mwozniski@bloomberg.net>
 iabbr _dt <C-R>=strftime("%a, %d %b %Y %H:%M:%S %z")<CR>
+iabbr #i< #include <><left><C-R>=<SID>EatChar('\s')<CR>
+iabbr #i" #include ""<left><C-R>=<SID>EatChar('\s')<CR>
+iabbr { <C-r>=<SID>InsertCloseBraceAfterCR("{", "}")<CR>
 
 """ Cute functions
 
@@ -374,34 +390,3 @@ cnoremap <expr> <Left>  wildmenumode() ? "\<Up>"    : "\<Left>"
 " Make each <C-u> and <C-w> undoable.
 inoremap <C-u> <C-g>u<C-u>
 inoremap <C-w> <C-g>u<C-w>
-
-
-call lexima#add_rule({'char': '<C-w>', 'at': '(\%#)',      'delete': 1})
-call lexima#add_rule({'char': '<C-w>', 'at': '{\%#}',      'delete': 1})
-call lexima#add_rule({'char': '<C-w>', 'at': '\[\%#\]',    'delete': 1})
-call lexima#add_rule({'char': '<C-w>', 'at': '"\%#"',      'delete': 1})
-call lexima#add_rule({'char': '<C-w>', 'at': "'\\%#'",     'delete': 1})
-call lexima#add_rule({'char': '<C-w>', 'at': '`\%#`',      'delete': 1})
-call lexima#add_rule({'char': '<C-w>', 'at': '( \%# )',    'delete': 2})
-call lexima#add_rule({'char': '<C-w>', 'at': '{ \%# }',    'delete': 2})
-call lexima#add_rule({'char': '<C-w>', 'at': '\[ \%# ]',   'delete': 2})
-call lexima#add_rule({'char': '<C-w>', 'at': '"""\%#"""',  'delete': 3})
-call lexima#add_rule({'char': '<C-w>', 'at': "'''\\%#'''", 'delete': 3})
-call lexima#add_rule({'char': '<C-w>', 'at': '```\%#```',  'delete': 3})
-
-call lexima#add_rule({'char': '<C-u>', 'at': '(\%#)',      'delete': 1})
-call lexima#add_rule({'char': '<C-u>', 'at': '{\%#}',      'delete': 1})
-call lexima#add_rule({'char': '<C-u>', 'at': '\[\%#\]',    'delete': 1})
-call lexima#add_rule({'char': '<C-u>', 'at': '"\%#"',      'delete': 1})
-call lexima#add_rule({'char': '<C-u>', 'at': "'\\%#'",     'delete': 1})
-call lexima#add_rule({'char': '<C-u>', 'at': '`\%#`',      'delete': 1})
-call lexima#add_rule({'char': '<C-u>', 'at': '( \%# )',    'delete': 2})
-call lexima#add_rule({'char': '<C-u>', 'at': '{ \%# }',    'delete': 2})
-call lexima#add_rule({'char': '<C-u>', 'at': '\[ \%# ]',   'delete': 2})
-call lexima#add_rule({'char': '<C-u>', 'at': '"""\%#"""',  'delete': 3})
-call lexima#add_rule({'char': '<C-u>', 'at': "'''\\%#'''", 'delete': 3})
-call lexima#add_rule({'char': '<C-u>', 'at': '```\%#```',  'delete': 3})
-
-call lexima#add_rule({'char': '<', 'at': '^\s*#\s*i\%#', 'input': 'nclude <', 'input_after': '>'})
-call lexima#add_rule({'char': '"', 'at': '^\s*#\s*i\%#', 'input': 'nclude "', 'input_after': '"'})
-call lexima#add_rule({'char': 'e', 'at': '(^\|\s)_m\%#', 'input': 'Matt Wozniski <mwozniski@bloomberg.net>'})
