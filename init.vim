@@ -80,8 +80,11 @@ set expandtab               " Use spaces, not tabs, for autoindent/tab key.
 
 """" Tags
 set showfulltag             " Show more information while completing tags.
-set cscopetag               " When using :tag, <C-]>, or "vim -t", try cscope:
-set cscopetagorder=0        " try ":cscope find g foo" and then ":tselect foo"
+
+if has('cscope')
+    set cscopetag           " When using :tag, <C-]>, or "vim -t", try cscope:
+    set cscopetagorder=0    " try ":cscope find g foo" and then ":tselect foo"
+endif
 
 """" Reading/Writing
 set noautowrite             " Never write a file unless I request it.
