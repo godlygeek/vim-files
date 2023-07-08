@@ -341,14 +341,30 @@ command! -nargs=1 -complete=dir Rename saveas <args> | call delete(expand("#"))
 
 lua <<EOF
 vim.cmd('packadd nvim-lspconfig')
-require'lspconfig'.clangd.setup{}
-require'lspconfig'.pyls.setup{
-  settings = {
-    pyls = {
-      configurationSources = {"flake8"};
-    }
-  }
+require 'lspconfig'.clangd.setup{}
+require 'lspconfig'.pyright.setup{}
+require 'lspconfig'.efm.setup {
+    init_options = {documentFormatting = true},
+    settings = {
+        rootMarkers = {".git/"},
+        languages = {
+            python = {
+                {formatCommand = "black --quiet -", formatStdin = true},
+                {formatCommand = "isort -", formatStdin = true},
+                {lintCommand = "flake8 --max-line-length 88 -", lintStdin = true},
+            }
+        }
+    },
+    filetypes = {"python"},
 }
+
+-- require 'lspconfig'.pyls.setup{
+--   settings = {
+--     pyls = {
+--       configurationSources = {"flake8"};
+--     }
+--   }
+-- }
 EOF
 
 nnoremap <C-up> <cmd>lua vim.diagnostic.goto_prev()<CR>
