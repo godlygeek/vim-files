@@ -194,7 +194,7 @@ nnoremap ' `
 nnoremap <C-g> 2<C-g>
 
 " <C-l> redraws the screen and removes search highlighting and LSP diagnostics.
-nnoremap <silent> <C-l> <cmd>nohl\|lua vim.lsp.diagnostic.clear(0)<CR><C-l>
+nnoremap <silent> <C-l> <cmd>nohl\|lua vim.diagnostic.hide(nil, 0)<CR><C-l>
 
 " In normal/insert mode, ar inserts spaces to right align to &tw or 80 chars
 nnoremap <leader>ar :AlignRight<CR>
@@ -351,19 +351,19 @@ require'lspconfig'.pyls.setup{
 }
 EOF
 
-nnoremap <C-up> <cmd>lua vim.lsp.diagnostic.goto_prev()<CR>
-nnoremap <C-down> <cmd>lua vim.lsp.diagnostic.goto_next()<CR>
+nnoremap <C-up> <cmd>lua vim.diagnostic.goto_prev()<CR>
+nnoremap <C-down> <cmd>lua vim.diagnostic.goto_next()<CR>
 
-nnoremap <Leader>k <cmd>lua vim.lsp.diagnostic.goto_prev()<CR>
-nnoremap <Leader>j <cmd>lua vim.lsp.diagnostic.goto_next()<CR>
+nnoremap <Leader>k <cmd>lua vim.diagnostic.goto_prev()<CR>
+nnoremap <Leader>j <cmd>lua vim.diagnostic.goto_next()<CR>
 nnoremap <Leader>x <cmd>lua vim.lsp.buf.code_action()<CR>
 nnoremap <Leader>d <cmd>lua vim.lsp.buf.definition()<CR>
-nnoremap <Leader>f <cmd>lua vim.lsp.buf.formatting()<CR>
+nnoremap <Leader>f <cmd>lua vim.lsp.buf.format()<CR>
 nnoremap <Leader>h <cmd>lua vim.lsp.buf.hover()<CR>
 nnoremap <Leader>n <cmd>lua vim.lsp.buf.rename()<CR>
 nnoremap <Leader>r <cmd>lua vim.lsp.buf.references()<CR>
 nnoremap <Leader>o <cmd>lua vim.lsp.buf.document_symbol()<CR>
-nnoremap <Leader>l <cmd>lua vim.lsp.diagnostic.set_loclist()<CR>
+nnoremap <Leader>l <cmd>lua vim.diagnostic.set_loclist()<CR>
 
 hi link LspDiagnosticsVirtualTextError Comment
 hi link LspDiagnosticsVirtualTextWarning Comment
