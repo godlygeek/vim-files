@@ -339,8 +339,23 @@ com! -nargs=? AlignRight :call <SID>AlignRight(<f-args>)
 
 command! -nargs=1 -complete=dir Rename saveas <args> | call delete(expand("#"))
 
+""" Package manager
 lua <<EOF
-vim.cmd('packadd nvim-lspconfig')
+require 'paq' {
+    'savq/paq-nvim',
+    'neovim/nvim-lspconfig',
+    'tpope/vim-characterize',
+    { 'nvim-treesitter/nvim-treesitter', build = ':TSUpdate' },
+    'nvim-treesitter/nvim-treesitter-textobjects',
+    'tpope/vim-surround',
+    'nvim-lua/plenary.nvim',
+    'nvim-telescope/telescope.nvim',
+    { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
+    'chrisbra/unicode.vim',
+}
+EOF
+
+lua <<EOF
 require 'lspconfig'.clangd.setup{}
 require 'lspconfig'.pyright.setup{}
 require 'lspconfig'.efm.setup {
