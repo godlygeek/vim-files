@@ -61,3 +61,8 @@ pytest
 CPython
 GitHub
 GitLab
+Memray
+venv
+python3
+iterable
+cibuildwheel
