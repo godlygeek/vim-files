@@ -357,21 +357,37 @@ EOF
 
 lua <<EOF
 require 'lspconfig'.clangd.setup{}
-require 'lspconfig'.pyright.setup{}
-require 'lspconfig'.efm.setup {
-    init_options = {documentFormatting = true},
-    settings = {
-        rootMarkers = {".git/"},
-        languages = {
-            python = {
-                {formatCommand = "black --quiet -", formatStdin = true},
-                {formatCommand = "isort -", formatStdin = true},
-                {lintCommand = "flake8 --max-line-length 88 -", lintStdin = true},
-            }
+require "lspconfig".basedpyright.setup {
+  root_dir = function(fname)
+    local root_files = {
+      'pyproject.toml',
+      'setup.py',
+      'setup.cfg',
+      'requirements.txt',
+      'Pipfile',
+      'pyrightconfig.json',
+      '.git',
+    }
+    local root = vim.fs.root(0, root_files)
+    if root == nil or root == vim.fs.normalize("~") then
+        root = "/boot"
+    end
+    return root
+  end,
+  settings = {
+    basedpyright = {
+      analysis = {
+        autoSearchPaths = false,
+        diagnosticMode = "openFilesOnly",
+        typeCheckingMode = "standard",
+        inlayHints = {
+          callArgumentNames = true
         }
-    },
-    filetypes = {"python"},
+      }
+    }
+  }
 }
+require 'lspconfig'.rust_analyzer.setup{}
 
 -- require 'lspconfig'.pyls.setup{
 --   settings = {
