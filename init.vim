@@ -341,6 +341,17 @@ command! -nargs=1 -complete=dir Rename saveas <args> | call delete(expand("#"))
 
 """ Package manager
 lua <<EOF
+local function bootstrap_paq()
+  local path = vim.fn.stdpath("data") .. "/site/pack/paqs/start/paq-nvim"
+  local is_installed = vim.fn.empty(vim.fn.glob(path)) == 0
+  if not is_installed then
+    vim.fn.system { "git", "clone", "--depth=1", "https://github.com/savq/paq-nvim.git", path }
+    vim.cmd.packadd("paq-nvim")
+  end
+end
+
+bootstrap_paq()
+
 require 'paq' {
     'savq/paq-nvim',
     'neovim/nvim-lspconfig',
@@ -356,8 +367,8 @@ require 'paq' {
 EOF
 
 lua <<EOF
-require 'lspconfig'.clangd.setup{}
-require "lspconfig".basedpyright.setup {
+vim.lsp.enable('clangd')
+vim.lsp.enable('basedpyright', {
   root_dir = function(fname)
     local root_files = {
       'pyproject.toml',
@@ -386,16 +397,9 @@ require "lspconfig".basedpyright.setup {
       }
     }
   }
-}
-require 'lspconfig'.rust_analyzer.setup{}
+})
+vim.lsp.enable('rust_analyzer')
 
--- require 'lspconfig'.pyls.setup{
---   settings = {
---     pyls = {
---       configurationSources = {"flake8"};
---     }
---   }
--- }
 EOF
 
 nnoremap <C-up> <cmd>lua vim.diagnostic.goto_prev()<CR>
@@ -418,12 +422,11 @@ hi link LspDiagnosticsVirtualTextInformation Comment
 hi link LspDiagnosticsVirtualTextHint Comment
 
 lua <<EOF
-vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
-  vim.lsp.diagnostic.on_publish_diagnostics, {
-    -- Enable virtual text, override spacing to 4
+vim.diagnostic.config(
+  {
     virtual_text = {
       prefix = 'ᐊ',
-    },
+    }
   }
 )
 EOF
