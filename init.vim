@@ -377,8 +377,10 @@ vim.pack.add(
 )
 
 vim.lsp.enable('clangd')
-vim.lsp.enable('basedpyright', {
-  root_dir = function(fname)
+vim.lsp.enable('basedpyright')
+vim.lsp.config('basedpyright', {
+  root_dir = function(bufnr, on_dir)
+    local fname = vim.fn.bufname(bufnr)
     local root_files = {
       'pyproject.toml',
       'setup.py',
@@ -392,7 +394,7 @@ vim.lsp.enable('basedpyright', {
     if root == nil or root == vim.fs.normalize("~") then
         root = "/boot"
     end
-    return root
+    on_dir(root)
   end,
   settings = {
     basedpyright = {
