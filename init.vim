@@ -410,11 +410,10 @@ vim.lsp.config('basedpyright', {
   }
 })
 vim.lsp.enable('rust_analyzer')
-
 EOF
 
-nnoremap <C-up> <cmd>lua vim.diagnostic.goto_prev()<CR>
-nnoremap <C-down> <cmd>lua vim.diagnostic.goto_next()<CR>
+nnoremap <C-up> <cmd>lua vim.diagnostic.jump{count=-1, float=true, wrap=false}<CR>
+nnoremap <C-down> <cmd>lua vim.diagnostic.jump{count=1, float=true, wrap=false}<CR>
 
 vnoremap <Leader>f <cmd>lua vim.lsp.buf.format()<CR>
 
@@ -427,7 +426,7 @@ nnoremap <Leader>h <cmd>lua vim.lsp.buf.hover()<CR>
 nnoremap <Leader>n <cmd>lua vim.lsp.buf.rename()<CR>
 nnoremap <Leader>r <cmd>lua vim.lsp.buf.references()<CR>
 nnoremap <Leader>o <cmd>lua vim.lsp.buf.document_symbol()<CR>
-nnoremap <Leader>l <cmd>lua vim.diagnostic.set_loclist()<CR>
+nnoremap <Leader>l <cmd>lua vim.diagnostic.setloclist()<CR>
 
 hi link LspDiagnosticsVirtualTextError Comment
 hi link LspDiagnosticsVirtualTextWarning Comment
