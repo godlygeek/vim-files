@@ -162,6 +162,9 @@ autocmd TextYankPost *
 
 augroup END
 
+" Show E325 error whenever a swap file already exists
+au! nvim.swapfile
+
 """ Colorscheme
 colorscheme autumnleaf  " 256 color light scheme
 "colorscheme brookstream " 256 color dark scheme
