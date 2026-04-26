@@ -416,6 +416,8 @@ EOF
 nnoremap <C-up> <cmd>lua vim.diagnostic.goto_prev()<CR>
 nnoremap <C-down> <cmd>lua vim.diagnostic.goto_next()<CR>
 
+vnoremap <Leader>f <cmd>lua vim.lsp.buf.format()<CR>
+
 nnoremap <Leader>k <cmd>lua vim.diagnostic.goto_prev()<CR>
 nnoremap <Leader>j <cmd>lua vim.diagnostic.goto_next()<CR>
 nnoremap <Leader>x <cmd>lua vim.lsp.buf.code_action()<CR>
