@@ -344,32 +344,38 @@ command! -nargs=1 -complete=dir Rename saveas <args> | call delete(expand("#"))
 
 """ Package manager
 lua <<EOF
-local function bootstrap_paq()
-  local path = vim.fn.stdpath("data") .. "/site/pack/paqs/start/paq-nvim"
-  local is_installed = vim.fn.empty(vim.fn.glob(path)) == 0
-  if not is_installed then
-    vim.fn.system { "git", "clone", "--depth=1", "https://github.com/savq/paq-nvim.git", path }
-    vim.cmd.packadd("paq-nvim")
+
+local package_hooks = function(event)
+  local name, kind = event.data.spec.name, event.data.kind
+  if name == 'nvim-treesitter' and (kind == 'install' or kind == 'update') then
+    if not event.data.active then
+      vim.cmd.packadd('nvim-treesitter')
+    end
+    vim.cmd('TSUpdate')
+  elseif name == 'telescope-fzf-native.nvim' and (kind == 'install' or kind == 'update') then
+    vim.system({ 'make' }, { cwd = event.data.path })
   end
 end
 
-bootstrap_paq()
+vim.api.nvim_create_autocmd('PackChanged', { callback = package_hooks })
 
-require 'paq' {
-    'savq/paq-nvim',
-    'neovim/nvim-lspconfig',
-    'tpope/vim-characterize',
-    { 'nvim-treesitter/nvim-treesitter', build = ':TSUpdate' },
-    'nvim-treesitter/nvim-treesitter-textobjects',
-    'tpope/vim-surround',
-    'nvim-lua/plenary.nvim',
-    'nvim-telescope/telescope.nvim',
-    { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
-    'chrisbra/unicode.vim',
-}
-EOF
+vim.pack.add(
+  {
+    "https://github.com/Konfekt/FastFold",
+    "https://github.com/chrisbra/unicode.vim",
+    "https://github.com/github/copilot.vim",
+    "https://github.com/godlygeek/tabular",
+    "https://github.com/neovim/nvim-lspconfig",
+    "https://github.com/nvim-lua/plenary.nvim",
+    "https://github.com/nvim-telescope/telescope-fzf-native.nvim",
+    "https://github.com/nvim-telescope/telescope.nvim",
+    "https://github.com/nvim-treesitter/nvim-treesitter",
+    "https://github.com/nvim-treesitter/nvim-treesitter-textobjects",
+    "https://github.com/tpope/vim-characterize",
+    "https://github.com/tpope/vim-surround",
+  }
+)
 
-lua <<EOF
 vim.lsp.enable('clangd')
 vim.lsp.enable('basedpyright', {
   root_dir = function(fname)

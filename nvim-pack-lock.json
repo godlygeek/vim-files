@@ -1,0 +1,56 @@
+{
+  "plugins": {
+    "FastFold": {
+      "rev": "c1ddfa1a0e00316d1161ce11438ec980348b8cb9",
+      "src": "https://github.com/Konfekt/FastFold"
+    },
+    "copilot.vim": {
+      "rev": "a12fd5672110c8aa7e3c8419e28c96943ca179be",
+      "src": "https://github.com/github/copilot.vim"
+    },
+    "nvim-lspconfig": {
+      "rev": "8fde495949782bb61c2605174e231d145a048d8c",
+      "src": "https://github.com/neovim/nvim-lspconfig"
+    },
+    "nvim-treesitter": {
+      "rev": "4916d6592ede8c07973490d9322f187e07dfefac",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter"
+    },
+    "nvim-treesitter-textobjects": {
+      "rev": "851e865342e5a4cb1ae23d31caf6e991e1c99f1e",
+      "src": "https://github.com/nvim-treesitter/nvim-treesitter-textobjects"
+    },
+    "plenary.nvim": {
+      "rev": "74b06c6c75e4eeb3108ec01852001636d85a932b",
+      "src": "https://github.com/nvim-lua/plenary.nvim"
+    },
+    "tabular": {
+      "rev": "12437cd1b53488e24936ec4b091c9324cafee311",
+      "src": "https://github.com/godlygeek/tabular"
+    },
+    "telescope-fzf-native.nvim": {
+      "rev": "6fea601bd2b694c6f2ae08a6c6fab14930c60e2c",
+      "src": "https://github.com/nvim-telescope/telescope-fzf-native.nvim"
+    },
+    "telescope.nvim": {
+      "rev": "506338434fec5ad19cb1f8d45bf92d66c4917393",
+      "src": "https://github.com/nvim-telescope/telescope.nvim"
+    },
+    "trouble.nvim": {
+      "rev": "bd67efe408d4816e25e8491cc5ad4088e708a69a",
+      "src": "https://github.com/folke/trouble.nvim"
+    },
+    "unicode.vim": {
+      "rev": "902cd2b0a41a38528d080f8dd7a16ec5a865ebdd",
+      "src": "https://github.com/chrisbra/unicode.vim"
+    },
+    "vim-characterize": {
+      "rev": "a8bffac6cead6b2869d939ecad06312b187a4c79",
+      "src": "https://github.com/tpope/vim-characterize"
+    },
+    "vim-surround": {
+      "rev": "3d188ed2113431cf8dac77be61b842acb64433d9",
+      "src": "https://github.com/tpope/vim-surround"
+    }
+  }
+}
