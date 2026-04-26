@@ -46,7 +46,7 @@ set formatoptions+=1        " break before, not after, a 1 letter word
 
 """" Display
 set number                  " Display line numbers
-set numberwidth=1           " using only 1 column (and 1 space) while possible
+set numberwidth=3           " using only 1 column (and 1 space) while possible
 set signcolumn=number       " and drawing signs in the number column
 set display+=uhex           " Use <03> rather than ^C for non-printing chars
 set inccommand=nosplit      " Preview :s commands incrementally as you type
