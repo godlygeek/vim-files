@@ -431,6 +431,10 @@ vim.diagnostic.config(
 )
 EOF
 
+"set winborder=rounded
+set winborder=╒,═,╕,│,╛,═,╘,│
+hi FloatBorder guibg=none
+
 " In vim the wildmenu is displayed horizontally, with left and right choosing
 " files and up and down descending or ascending the directory hierarchy. In
 " neovim it's displayed vertically instead, but the keybindings aren't changed

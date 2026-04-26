@@ -57,38 +57,38 @@ hi VertSplit	guibg=#aa8866	guifg=#ffe0bb	gui=none
 
 hi Comment guibg=#ddeedd guifg=#002200 gui=none
 
-hi Constant	guibg=bg    guifg=#003399 gui=bold
+hi Constant	guibg=bg    guifg=#003399 gui=none
 hi String	guibg=bg    guifg=#003399 gui=italic
 hi Character	guibg=bg    guifg=#003399 gui=italic
-hi Number	guibg=bg    guifg=#003399 gui=bold
-hi Boolean	guibg=bg    guifg=#003399 gui=bold
-hi Float	guibg=bg    guifg=#003399 gui=bold
+hi Number	guibg=bg    guifg=#003399 gui=none
+hi Boolean	guibg=bg    guifg=#003399 gui=none
+hi Float	guibg=bg    guifg=#003399 gui=none
 
 hi Identifier	guibg=bg    guifg=#003399 gui=none
-hi Function	guibg=bg    guifg=#0055aa gui=bold
+hi Function	guibg=bg    guifg=#0055aa gui=none
 hi Statement	guibg=bg    guifg=#003399 gui=none
 
-hi Conditional	guibg=bg    guifg=#aa7733 gui=bold
-hi Repeat	guibg=bg    guifg=#aa5544 gui=bold
+hi Conditional	guibg=bg    guifg=#aa7733 gui=none
+hi Repeat	guibg=bg    guifg=#aa5544 gui=none
 hi link	Label	Conditional
-hi Operator	guibg=bg    guifg=#aa7733 gui=bold
+hi Operator	guibg=bg    guifg=#aa7733 gui=none
 hi link Keyword	Statement
-hi Exception	guibg=bg    guifg=#228877 gui=bold
+hi Exception	guibg=bg    guifg=#228877 gui=none
 
-hi PreProc	    guibg=bg	guifg=#aa7733 gui=bold
-hi Include	    guibg=bg	guifg=#558811 gui=bold
+hi PreProc	    guibg=bg	guifg=#aa7733 gui=none
+hi Include	    guibg=bg	guifg=#558811 gui=none
 hi link Define	    Include
 hi link Macro	    Include
 hi link PreCondit   Include
 
-hi Type			guibg=bg    guifg=#007700 gui=bold
+hi Type			guibg=bg    guifg=#007700 gui=none
 hi link StorageClass	Type
 hi link Structure	Type
 hi Typedef		guibg=bg    guifg=#009900 gui=italic
 
 hi Special	    guibg=bg	    guifg=fg	    gui=none
-hi SpecialChar	    guibg=bg	    guifg=fg	    gui=bold
-hi Tag		    guibg=bg	    guifg=#003399   gui=bold
+hi SpecialChar	    guibg=none	    guifg=none	    gui=bold
+hi Tag		    guibg=bg	    guifg=#003399   gui=none
 hi link Delimiter   Special
 hi SpecialComment   guibg=#dddddd   guifg=#aa0000   gui=none
 hi link Debug	    Special
