@@ -43,98 +43,50 @@ require'nvim-treesitter-textobjects'.setup {
   },
 }
 
-vim.keymap.set({ "x", "o" }, "af", function()
-  require "nvim-treesitter-textobjects.select".select_textobject("@function.outer", "textobjects")
-end)
+local select = require "nvim-treesitter-textobjects.select"
+for _, m in ipairs({
+  { "af", "@function.outer" },
+  { "if", "@function.inner" },
+  { "aa", "@parameter.outer" },
+  { "ia", "@parameter.inner" },
+  { "ac", "@class.outer" },
+  { "ic", "@class.inner" },
+}) do
+  local keys, query = m[1], m[2]
+  local modes = { "x", "o" }
+  vim.keymap.set(modes, keys, function()
+    select.select_textobject(query, "textobjects")
+  end)
+end
 
-vim.keymap.set({ "x", "o" }, "if", function()
-  require "nvim-treesitter-textobjects.select".select_textobject("@function.inner", "textobjects")
-end)
+local swap = require "nvim-treesitter-textobjects.swap"
+for _, m in ipairs({
+  { "<leader>sa", "<leader>Sa", "@parameter.inner" },
+  { "<leader>sf", "<leader>Sf", "@function.outer" },
+  { "<leader>ss", "<leader>Ss", "@statement.outer" },
+}) do
+  local next_mapping, prev_mapping, query = m[1], m[2], m[3]
+  local modes = { "n" }
+  vim.keymap.set(modes, next_mapping, function() swap.swap_next(query) end)
+  vim.keymap.set(modes, prev_mapping, function() swap.swap_previous(query) end)
+end
 
-vim.keymap.set({ "x", "o" }, "aa", function()
-  require "nvim-treesitter-textobjects.select".select_textobject("@parameter.outer", "textobjects")
-end)
-
-vim.keymap.set({ "x", "o" }, "ia", function()
-  require "nvim-treesitter-textobjects.select".select_textobject("@parameter.inner", "textobjects")
-end)
-
-vim.keymap.set({ "x", "o" }, "ac", function()
-  require "nvim-treesitter-textobjects.select".select_textobject("@class.outer", "textobjects")
-end)
-
-vim.keymap.set({ "x", "o" }, "ic", function()
-  require "nvim-treesitter-textobjects.select".select_textobject("@class.inner", "textobjects")
-end)
-
-vim.keymap.set("n", "<leader>sa", function()
-  require("nvim-treesitter-textobjects.swap").swap_next "@parameter.inner"
-end)
-
-vim.keymap.set("n", "<leader>Sa", function()
-  require("nvim-treesitter-textobjects.swap").swap_previous "@parameter.inner"
-end)
-
-vim.keymap.set("n", "<leader>sf", function()
-  require("nvim-treesitter-textobjects.swap").swap_next "@function.outer"
-end)
-
-vim.keymap.set("n", "<leader>Sf", function()
-  require("nvim-treesitter-textobjects.swap").swap_previous "@function.outer"
-end)
-
-vim.keymap.set("n", "<leader>ss", function()
-  require("nvim-treesitter-textobjects.swap").swap_next "@statement.outer"
-end)
-
-vim.keymap.set("n", "<leader>Ss", function()
-  require("nvim-treesitter-textobjects.swap").swap_previous "@statement.outer"
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "]]", function()
-  require("nvim-treesitter-textobjects.move").goto_next_start({"@class.outer", "@function.outer"}, "textobjects")
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "[[", function()
-  require("nvim-treesitter-textobjects.move").goto_previous_start({"@class.outer", "@function.outer"}, "textobjects")
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "][", function()
-  require("nvim-treesitter-textobjects.move").goto_next_end({"@class.outer", "@function.outer"}, "textobjects")
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "[]", function()
-  require("nvim-treesitter-textobjects.move").goto_previous_end({"@class.outer", "@function.outer"}, "textobjects")
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "]m", function()
-  require("nvim-treesitter-textobjects.move").goto_next_start({"@class.outer", "@function.outer"}, "textobjects")
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "[m", function()
-  require("nvim-treesitter-textobjects.move").goto_previous_start({"@class.outer", "@function.outer"}, "textobjects")
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "]M", function()
-  require("nvim-treesitter-textobjects.move").goto_next_end({"@class.outer", "@function.outer"}, "textobjects")
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "[M", function()
-  require("nvim-treesitter-textobjects.move").goto_previous_end({"@class.outer", "@function.outer"}, "textobjects")
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "]?", function()
-  require("nvim-treesitter-textobjects.move").goto_next_start("@conditional.outer", "textobjects")
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "[?", function()
-  require("nvim-treesitter-textobjects.move").goto_previous_start("@conditional.outer", "textobjects")
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "]s", function()
-  require("nvim-treesitter-textobjects.move").goto_next_start("@local.scope", "locals")
-end)
-
-vim.keymap.set({ "n", "x", "o" }, "[s", function()
-  require("nvim-treesitter-textobjects.move").goto_previous_start("@local.scope", "locals")
-end)
+local move = require "nvim-treesitter-textobjects.move"
+local class_or_fn = { "@class.outer", "@function.outer" }
+for _, m in ipairs({
+  { "]]", "[[", "][", "[]", class_or_fn,          "textobjects" },
+  { "]m", "[m", "]M", "[M", class_or_fn,          "textobjects" },
+  { "]?", "[?", nil,  nil,  "@conditional.outer", "textobjects" },
+  { "]s", "[s", nil,  nil,  "@local.scope",       "locals" },
+}) do
+  local ns, ps, ne, pe, query, source = m[1], m[2], m[3], m[4], m[5], m[6]
+  local modes = { "n", "x", "o" }
+  vim.keymap.set(modes, ns, function() move.goto_next_start(query, source) end)
+  vim.keymap.set(modes, ps, function() move.goto_previous_start(query, source) end)
+  if ne then
+    vim.keymap.set(modes, ne, function() move.goto_next_end(query, source) end)
+  end
+  if pe then
+    vim.keymap.set(modes, pe, function() move.goto_previous_end(query, source) end)
+  end
+end
