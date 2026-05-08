@@ -373,8 +373,105 @@ vim.pack.add(
     "https://github.com/nvim-treesitter/nvim-treesitter-textobjects",
     "https://github.com/tpope/vim-characterize",
     "https://github.com/tpope/vim-surround",
+    "https://github.com/luukvbaal/statuscol.nvim",
+    "https://github.com/lewis6991/gitsigns.nvim",
+    'https://github.com/nvim-lualine/lualine.nvim'
   }
 )
+require('lualine').setup{
+  options = {
+    component_separators = { left = '', right = '' },
+    theme = {
+      normal = {
+          a = {},
+          b = {},
+          c = {},
+      },
+    },
+  },
+  sections = {
+    lualine_a = {
+      {
+        '%f%{&mod?"[+]":""}%r',
+        padding = {left = 0, right = 1},
+      },
+      {
+        'branch',
+        icons_enabled = false,
+        fmt = function(str) return str:gsub(".+", "@ %0") end,
+        padding = {left = 0, right = 1},
+      },
+      {'diff', padding = {left = 0, right = 1}},
+      {'diagnostics', padding = {left = 0, right = 1}},
+    },
+    lualine_b = {},
+    lualine_c = {},
+    lualine_x = {},
+    lualine_y = {},
+    lualine_z = {
+      {
+        'encoding',
+        show_bomb = true,
+        fmt = function(str) return str:gsub("^utf%-8$", "") end,
+      },
+      {
+        '%l,%c%V %P',
+        padding = 0,
+      },
+    },
+  },
+  inactive_sections = {
+    lualine_a = {{'%f', padding = 0}},
+    lualine_b = {},
+    lualine_c = {},
+    lualine_x = {},
+    lualine_y = {},
+    lualine_z = {}
+  },
+}
+
+-- require('gitsigns').setup {
+--   signs = {
+--     add          = { text = '▍' },
+--     change       = { text = '▍' },
+--     delete       = { text = '_' },
+--     topdelete    = { text = '‾' },
+--     changedelete = { text = '~' },
+--     untracked    = { text = '┆' },
+--   },
+--   signs_staged = {
+--     add          = { text = '▍' },
+--     change       = { text = '▍' },
+--     delete       = { text = '_' },
+--     topdelete    = { text = '‾' },
+--     changedelete = { text = '~' },
+--     untracked    = { text = '┆' },
+--   },
+-- }
+
+local builtin = require("statuscol.builtin")
+local cfg = {
+  segments = {
+    { text = { "%C" }, click = "v:lua.ScFa" },
+    { text = { builtin.lnumfunc }, sign = { namespace = { "diagnostics" } }, click = "v:lua.ScLa" },
+    { sign = { namespace = { "gitsigns", }, colwidth = 1, auto = " ", wrap = true, }, },
+  },
+  clickmod = "c",         -- modifier used for certain actions in the builtin clickhandlers:
+                          -- "a" for Alt, "c" for Ctrl and "m" for Meta.
+  clickhandlers = {       -- builtin click handlers, keys are pattern matched
+    Lnum                    = builtin.lnum_click,
+    FoldClose               = builtin.foldclose_click,
+    FoldOpen                = builtin.foldopen_click,
+    FoldOther               = builtin.foldother_click,
+    DapBreakpointRejected   = builtin.toggle_breakpoint,
+    DapBreakpoint           = builtin.toggle_breakpoint,
+    DapBreakpointCondition  = builtin.toggle_breakpoint,
+    ["diagnostic/signs"]    = builtin.diagnostic_click,
+    gitsigns                = builtin.gitsigns_click,
+  },
+}
+require("statuscol").setup(cfg)
+vim.cmd("hi signcolumn guibg=none")
 
 vim.lsp.enable('clangd')
 vim.lsp.enable('basedpyright')
