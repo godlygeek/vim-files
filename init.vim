@@ -453,21 +453,9 @@ local builtin = require("statuscol.builtin")
 local cfg = {
   segments = {
     { text = { "%C" }, click = "v:lua.ScFa" },
-    { text = { builtin.lnumfunc }, sign = { namespace = { "diagnostics" } }, click = "v:lua.ScLa" },
-    { sign = { namespace = { "gitsigns", }, colwidth = 1, auto = " ", wrap = true, }, },
-  },
-  clickmod = "c",         -- modifier used for certain actions in the builtin clickhandlers:
-                          -- "a" for Alt, "c" for Ctrl and "m" for Meta.
-  clickhandlers = {       -- builtin click handlers, keys are pattern matched
-    Lnum                    = builtin.lnum_click,
-    FoldClose               = builtin.foldclose_click,
-    FoldOpen                = builtin.foldopen_click,
-    FoldOther               = builtin.foldother_click,
-    DapBreakpointRejected   = builtin.toggle_breakpoint,
-    DapBreakpoint           = builtin.toggle_breakpoint,
-    DapBreakpointCondition  = builtin.toggle_breakpoint,
-    ["diagnostic/signs"]    = builtin.diagnostic_click,
-    gitsigns                = builtin.gitsigns_click,
+    { sign = { namespace = { ".*" }, maxwidth = 2, colwidth = 2, auto = true}, click = "v:lua.ScSa" },
+    { text = { builtin.lnumfunc }, sign = { namespace = { "diagnostic.signs" } }, click = "v:lua.ScLa" },
+    { sign = { namespace = { "gitsigns", }, colwidth = 1, auto = " ", wrap = true, }, click = "v:lua.ScSa"  },
   },
 }
 require("statuscol").setup(cfg)
