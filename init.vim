@@ -375,9 +375,73 @@ vim.pack.add(
     "https://github.com/tpope/vim-surround",
     "https://github.com/luukvbaal/statuscol.nvim",
     "https://github.com/lewis6991/gitsigns.nvim",
-    'https://github.com/nvim-lualine/lualine.nvim'
+    "https://github.com/nvim-lualine/lualine.nvim",
+    "https://github.com/nvim-treesitter/nvim-treesitter-context",
+    "https://github.com/MeanderingProgrammer/render-markdown.nvim.git",
   }
 )
+
+vim.cmd("hi RenderMarkdownH1Bg guibg=#FFC1CC")
+vim.cmd("hi RenderMarkdownH2Bg guibg=#FFE0B2")
+vim.cmd("hi RenderMarkdownH3Bg guibg=#FFF8B0")
+vim.cmd("hi RenderMarkdownH4Bg guibg=#D5FCD6")
+vim.cmd("hi RenderMarkdownH5Bg guibg=#C2F0FF")
+vim.cmd("hi RenderMarkdownH6Bg guibg=#C5D9FF")
+vim.cmd("hi link RenderMarkdownCode CursorColumn")
+
+require('render-markdown').setup({
+  sign = {
+    enabled = false,
+  },
+  heading = {
+    width = "block",
+    position = "inline",
+    --icons = { ' ', ' ', ' ', ' ', ' ', ' ' },
+    --icons = { '§ ' },
+    icons = { '󰌹 ' },
+  },
+  code = {
+    position = 'right',
+    width = 'block',
+    right_pad = 1,
+    language_border = ' ',
+    language_left = '',
+    language_right = ' ',
+    border = "thin",
+  },
+  checkbox = {
+    left_pad = 3,
+  },
+  overrides = {
+      buftype = {
+          nofile = {
+              heading = {
+                backgrounds = {},
+              },
+              code = {
+                disable_background = true,
+                inline = true,
+                language = false,
+                border = 'none',
+              },
+          },
+      },
+  },
+  indent = {
+      enabled = false,
+  },
+})
+
+require'treesitter-context'.setup{
+  enable = true, -- Enable this plugin (Can be enabled/disabled later via commands)
+  max_lines = 0, -- How many lines the window should span. Values <= 0 mean no limit.
+  line_numbers = true,
+  mode = 'cursor',  -- Line used to calculate context. Choices: 'cursor', 'topline'
+  separator = nil, -- "─"
+}
+
+vim.cmd("hi TreesitterContextBottom gui=underline")
+
 require('lualine').setup{
   options = {
     component_separators = { left = '', right = '' },
@@ -508,6 +572,7 @@ nnoremap <Leader>x <cmd>lua vim.lsp.buf.code_action()<CR>
 nnoremap <Leader>d <cmd>lua vim.lsp.buf.definition()<CR>
 nnoremap <Leader>f <cmd>lua vim.lsp.buf.format()<CR>
 nnoremap <Leader>h <cmd>lua vim.lsp.buf.hover()<CR>
+nnoremap <Leader>i <cmd>lua vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())<CR>
 nnoremap <Leader>n <cmd>lua vim.lsp.buf.rename()<CR>
 nnoremap <Leader>r <cmd>lua vim.lsp.buf.references()<CR>
 nnoremap <Leader>o <cmd>lua vim.lsp.buf.document_symbol()<CR>
