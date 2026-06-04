@@ -1,4 +1,22 @@
 require('telescope').setup {
+  defaults = {
+    mappings = {
+      i = {
+        ["<Esc>"] = require("telescope.actions").close,
+        ["<C-Space>"] = require("telescope.actions.layout").cycle_layout_prev,
+        ["<C-u>"] = false,
+        ["<C-d>"] = false,
+        ["<C-f>"] = false,
+        ["<C-k>"] = false,
+        ["<C-h>"] = require("telescope.actions").preview_scrolling_left,
+        ["<C-j>"] = require("telescope.actions").preview_scrolling_down,
+        ["<C-k>"] = require("telescope.actions").preview_scrolling_up,
+        ["<C-l>"] = require("telescope.actions").preview_scrolling_right,
+      },
+    },
+    cycle_layout_list = {"vertical", "horizontal"},
+    layout_config = { height = .95, width = .9 },
+  },
   pickers = {
     lsp_document_symbols = {
       symbol_width = 50,
