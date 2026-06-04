@@ -297,6 +297,12 @@ elseif has("gui_running") || &t_Co == 88
     CSAHi SpellLocal term=underline cterm=undercurl ctermbg=79 ctermfg=21 gui=undercurl guibg=bg guifg=fg guisp=DarkCyan
 endif
 
+hi DiffChange guibg=#fed3af
+hi DiffAdd guibg=#fed3af
+hi DiffDelete guibg=#fed3af guifg=#e6bb97
+hi DiffTextAdd guibg=#f1ad74 guifg=fg gui=NONE
+hi DiffText guibg=#f1ad74 guifg=fg gui=NONE
+
 if 1
     delcommand CSAHi
 endif

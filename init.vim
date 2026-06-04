@@ -378,8 +378,15 @@ vim.pack.add(
     "https://github.com/nvim-lualine/lualine.nvim",
     "https://github.com/nvim-treesitter/nvim-treesitter-context",
     "https://github.com/MeanderingProgrammer/render-markdown.nvim.git",
+    "https://github.com/sindrets/diffview.nvim",
   }
 )
+
+require("diffview").setup{
+  use_icons = false,
+}
+
+vim.cmd("set fillchars+=diff:╱")
 
 vim.cmd("hi RenderMarkdownH1Bg guibg=#FFC1CC")
 vim.cmd("hi RenderMarkdownH2Bg guibg=#FFE0B2")
