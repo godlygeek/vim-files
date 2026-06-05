@@ -520,6 +520,12 @@ require('lualine').setup{
 --   },
 -- }
 
+vim.cmd("hi GitSignsAddInline guibg=#BAECBF")
+vim.cmd("hi GitSignsChangeInline guibg=#BAECBF")
+vim.cmd("hi GitSignsDeleteInline guibg=#F7D0CC")
+vim.cmd("hi GitSignsAddPreview guibg=#E0FAE3")
+vim.cmd("hi GitSignsDeletePreview guibg=#FCECEA")
+
 local builtin = require("statuscol.builtin")
 local cfg = {
   segments = {
