@@ -50,6 +50,12 @@ set numberwidth=3           " using only 1 column (and 1 space) while possible
 set signcolumn=number       " and drawing signs in the number column
 set display+=uhex           " Use <03> rather than ^C for non-printing chars
 set inccommand=nosplit      " Preview :s commands incrementally as you type
+set cursorline              " Draw attention to the line the cursor is on
+set cursorlineopt=number    " by highlighting (only) its line number.
+
+" And only show the current line's number as bold in the current window.
+au WinLeave * setlocal nocursorline
+au WinEnter * setlocal cursorline
 
 " In visual mode, make the cursor an underbar 15% of the cell high,
 " and make it blink off for 100ms every 300ms.
