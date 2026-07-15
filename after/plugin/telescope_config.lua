@@ -1,5 +1,6 @@
 require('telescope').setup {
   defaults = {
+    file_ignore_patterns = { ".git/" },
     mappings = {
       i = {
         ["<Esc>"] = require("telescope.actions").close,
