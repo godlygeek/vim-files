@@ -120,7 +120,9 @@ end
 
 local builtin = require('telescope.builtin')
 vim.keymap.set('n', '<leader>tt', function() builtin.find_files{cwd=get_repo_root(), hidden=true} end, {})
+vim.keymap.set('n', '<leader>tT', function() builtin.find_files{hidden=true} end, {})
 vim.keymap.set('n', '<leader>tg', function() builtin.live_grep{cwd=get_repo_root(), hidden=true} end, {})
+vim.keymap.set('n', '<leader>tG', function() builtin.live_grep{hidden=true} end, {})
 vim.keymap.set('n', '<leader>tb', builtin.buffers, {})
 vim.keymap.set('n', '<leader>to', builtin.oldfiles, {})
 vim.keymap.set('n', '<leader>ts', builtin.lsp_document_symbols, {})
