@@ -359,7 +359,16 @@ local package_hooks = function(event)
     end
     vim.cmd('TSUpdate')
   elseif name == 'telescope-fzf-native.nvim' and (kind == 'install' or kind == 'update') then
-    vim.system({ 'make' }, { cwd = event.data.path })
+    local on_exit = function(obj)
+      if obj.code ~= 0 then
+        vim.print("make failed with rc " .. obj.code)
+        vim.print("stdout:")
+        vim.print(obj.stdout)
+        vim.print("stderr:")
+        vim.print(obj.stderr)
+      end
+    end
+    vim.system({ 'make' }, { cwd = event.data.path }, on_exit):wait()
   end
 end
 
