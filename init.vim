@@ -391,7 +391,6 @@ vim.pack.add(
     "https://github.com/luukvbaal/statuscol.nvim",
     "https://github.com/lewis6991/gitsigns.nvim",
     "https://github.com/nvim-lualine/lualine.nvim",
-    "https://github.com/nvim-treesitter/nvim-treesitter-context",
     "https://github.com/MeanderingProgrammer/render-markdown.nvim.git",
     "https://github.com/sindrets/diffview.nvim",
   }
@@ -451,16 +450,6 @@ require('render-markdown').setup({
       enabled = false,
   },
 })
-
-require'treesitter-context'.setup{
-  enable = true, -- Enable this plugin (Can be enabled/disabled later via commands)
-  max_lines = 0, -- How many lines the window should span. Values <= 0 mean no limit.
-  line_numbers = true,
-  mode = 'cursor',  -- Line used to calculate context. Choices: 'cursor', 'topline'
-  separator = nil, -- "─"
-}
-
-vim.cmd("hi TreesitterContextBottom gui=underline")
 
 require('lualine').setup{
   options = {
