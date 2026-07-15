@@ -299,7 +299,7 @@ endif
 
 hi DiffChange guibg=#fed3af
 hi DiffAdd guibg=#fed3af
-hi DiffDelete guibg=#fed3af guifg=#e6bb97
+hi DiffDelete guibg=#f0f0f0 guifg=NONE
 hi DiffTextAdd guibg=#f1ad74 guifg=fg gui=NONE
 hi DiffText guibg=#f1ad74 guifg=fg gui=NONE
 

@@ -386,8 +386,6 @@ require("diffview").setup{
   use_icons = false,
 }
 
-vim.cmd("set fillchars+=diff:╱")
-
 vim.cmd("hi RenderMarkdownH1Bg guibg=#FFC1CC")
 vim.cmd("hi RenderMarkdownH2Bg guibg=#FFE0B2")
 vim.cmd("hi RenderMarkdownH3Bg guibg=#FFF8B0")
