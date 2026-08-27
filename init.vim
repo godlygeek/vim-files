@@ -172,6 +172,9 @@ augroup END
 au! nvim.swapfile
 
 """ Colorscheme
+if &t_Co == 256
+    set termguicolors  " Assume 256-color terminals support true color
+endif
 colorscheme autumnleaf  " 256 color light scheme
 "colorscheme brookstream " 256 color dark scheme
 
