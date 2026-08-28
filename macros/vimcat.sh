@@ -22,7 +22,7 @@
 " License:        BSD. Completely open source, but I would like to be
 "                 credited if you use some of this code elsewhere.
 
-" Copyright (c) 2008, Matthew J. Wozniski                                {{{1
+" Copyright (c) 2015, Matthew J. Wozniski                                {{{1
 " All rights reserved.
 " 
 " Redistribution and use in source and binary forms, with or without
@@ -32,9 +32,6 @@
 "     * Redistributions in binary form must reproduce the above copyright
 "       notice, this list of conditions and the following disclaimer in the
 "       documentation and/or other materials provided with the distribution.
-"     * The names of the contributors may not be used to endorse or promote
-"       products derived from this software without specific prior written
-"       permission.
 " 
 " THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER ``AS IS'' AND ANY
 " EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -94,11 +91,6 @@ function! s:GroupToAnsi(groupnum)
     let fg = temp
   endif
 
-  if fg >= 8 && fg < 16
-    let fg -= 8
-    let bd = 1
-  endif
-
   if fg == "" || fg == -1
     unlet fg
   endif
@@ -114,7 +106,7 @@ function! s:GroupToAnsi(groupnum)
     unlet bg
   endif
 
-  if !exists('bg') && !groupnum == hlID('Normal')
+  if !exists('bg')
     let bg = synIDattr(hlID('Normal'), 'bg', s:type)
     if bg == "" || bg == -1
       unlet bg
@@ -129,14 +121,22 @@ function! s:GroupToAnsi(groupnum)
 
   if exists('fg') && fg < 8
     let retv .= ";3" . fg
-  elseif exists('fg')
+  elseif exists('fg')  && fg < 16    "use aixterm codes
+    let retv .= ";9" . (fg - 8)
+  elseif exists('fg')                "use xterm256 codes
     let retv .= ";38;5;" . fg
+  else
+    let retv .= ";39"
   endif
 
   if exists('bg') && bg < 8
     let retv .= ";4" . bg
-  elseif exists('bg')
+  elseif exists('bg') && bg < 16     "use aixterm codes
+    let retv .= ";10" . (bg - 8)
+  elseif exists('bg')                "use xterm256 codes
     let retv .= ";48;5;" . bg
+  else
+    let retv .= ";49"
   endif
 
   let retv .= "m"
